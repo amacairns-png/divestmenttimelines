@@ -31,19 +31,22 @@
   .controls {
     background: #fff;
     border-radius: 10px;
-    padding: 20px 24px;
-    margin-bottom: 24px;
+    padding: 20px 24px 0;
+    margin-bottom: 0;
     box-shadow: 0 2px 8px rgba(0,0,0,0.07);
     display: flex;
-    align-items: center;
-    gap: 32px;
-    flex-wrap: wrap;
+    align-items: flex-end;
+    gap: 0;
+    overflow: hidden;
   }
 
   .control-group {
     display: flex;
     flex-direction: column;
     gap: 5px;
+    padding-bottom: 16px;
+    padding-right: 20px;
+    flex-shrink: 0;
   }
 
   .control-group label {
@@ -69,22 +72,6 @@
     border-color: #3d7ab5;
   }
 
-  .legend {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 14px;
-    align-items: center;
-    margin-left: auto;
-  }
-
-  .legend-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 0.78rem;
-    color: #4a5568;
-  }
-
   .legend-swatch {
     width: 28px;
     height: 14px;
@@ -99,12 +86,24 @@
     flex-shrink: 0;
   }
 
+  /* Inline axis in controls bar */
+  .controls-axis {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    align-self: stretch;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+  }
+
   .chart-container {
     background: #fff;
-    border-radius: 10px;
-    padding: 20px 24px 28px;
+    border-radius: 0 0 10px 10px;
+    padding: 0 24px 28px;
     box-shadow: 0 2px 8px rgba(0,0,0,0.07);
     overflow-x: auto;
+    margin-bottom: 24px;
   }
 
   .section-label {
@@ -129,13 +128,9 @@
     min-width: 900px;
   }
 
-  /* Month axis */
+  /* Month axis — lives inside controls bar */
   .axis-header {
-    margin-left: 200px;
-    position: sticky;
-    top: 0;
-    background: #fff;
-    z-index: 10;
+    width: 100%;
   }
 
   .year-axis {
@@ -459,41 +454,7 @@
     <label>Alcoa Legal Day 1</label>
     <input type="date" id="ld1Input" />
   </div>
-  <div class="legend">
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:#4a90d9"></div> South32 Divestment Subscriptions
-    </div>
-    <div class="legend-item">
-      <div class="legend-marker" style="background:#e07b39; border-radius:0; transform:rotate(45deg); display:inline-block;"></div> South32 Renewal
-    </div>
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:#e07b39; opacity:0.75;"></div> Possible Rise Renewal (2yr)
-    </div>
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:#5b8c5a"></div> Existing TSA (6m)
-    </div>
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:#2d7a4f"></div> Core (12m)
-    </div>
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:#c57c2e"></div> Extension 1 - Core plus
-    </div>
-    <div class="legend-item">
-      <div class="legend-swatch" style="background:#9b3a3a"></div> Extension 2 - Ext 1 plus
-    </div>
-    <div class="legend-item">
-      <div style="width:2px; height:14px; background: repeating-linear-gradient(to bottom, #4a90d9 0px, #4a90d9 4px, transparent 4px, transparent 7px);"></div> Contract event
-    </div>
-    <div class="legend-item">
-      <div style="width:2px; height:14px; background: repeating-linear-gradient(to bottom, #e07b39 0px, #e07b39 4px, transparent 4px, transparent 7px);"></div> Renewal date
-    </div>
-    <div class="legend-item">
-      <div class="legend-marker" style="background:#e53e3e; border-radius:0; transform:rotate(45deg)"></div> Legal Day 1
-    </div>
-    <div class="legend-item">
-      <div style="width:14px; height:2px; background:#e53e3e;"></div> Today
-    </div>
-  </div>
+  <div class="controls-axis" id="controlsAxis"></div>
 </div>
 
 <div class="chart-container">
@@ -708,9 +669,15 @@ function render() {
   const wrapper = document.getElementById('timelineWrapper');
   wrapper.innerHTML = '';
 
-  // ── Year + Month axis ───────────────────────
+  const controlsAxis = document.getElementById('controlsAxis');
+  controlsAxis.innerHTML = '';
+
+  // ── Year + Month axis (placed in controls bar) ───────────────────────
   const axisHeader = document.createElement('div');
   axisHeader.className = 'axis-header';
+  // Offset to align with the track area: row-label width (200px) + chart padding difference
+  // Controls bar padding: 24px; chart-container padding: 24px — same, so offset = 200px
+  axisHeader.style.paddingLeft = '200px';
 
   // Build year groups: find consecutive months belonging to each year
   const yearGroups = [];
@@ -743,7 +710,7 @@ function render() {
     axisDiv.appendChild(cell);
   });
   axisHeader.appendChild(axisDiv);
-  wrapper.appendChild(axisHeader);
+  controlsAxis.appendChild(axisHeader);
 
   // ── Today label row ──────────────────────────
   const todayLabelRow = document.createElement('div');
