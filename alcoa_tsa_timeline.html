@@ -502,14 +502,10 @@ const FIXED_DATA = {
   successFactorsRenewal:       new Date('2028-04-03'),
   possibleRiseRenewalDuration: 24, // 2 years in months
 };
-
 // Mutable draggable dates
 const MUTABLE = {
   riseRenewal:         new Date('2027-09-17'),
   possibleRiseStart:   new Date('2027-09-17'), // tracks with riseRenewal by default
-  contractSigning:     new Date('2026-12-31'),
-  contractStart:       new Date('2027-03-31'),
-  contractEnd:         new Date('2029-03-30'),
 };
 
 // TSA duration definitions (months)
@@ -542,16 +538,6 @@ function toInputValue(d) {
   return `${y}-${m}-${day}`;
 }
 
-function daysDiff(a, b) {
-  return Math.round((b - a) / 86400000);
-}
-
-function shiftDate(d, days) {
-  const r = new Date(d);
-  r.setDate(r.getDate() + days);
-  return r;
-}
-
 // ─────────────────────────────────────────────
 //  TIMELINE RANGE
 // ─────────────────────────────────────────────
@@ -560,11 +546,9 @@ function getTimelineRange(ld1) {
   let start = new Date('2026-10-01');
   let end   = new Date('2030-06-01');
 
-  // Accommodate dragged contract period
-  const contractEarliestStart = new Date(Math.min(MUTABLE.contractSigning, MUTABLE.contractStart));
-  const contractLatestEnd     = MUTABLE.contractEnd;
-  if (contractEarliestStart < start) start = new Date(contractEarliestStart.getFullYear(), contractEarliestStart.getMonth() - 1, 1);
-  if (contractLatestEnd > end)       end   = new Date(contractLatestEnd.getFullYear(),     contractLatestEnd.getMonth() + 2,    1);
+  // Accommodate contract period
+  if (FIXED_DATA.contractSigning < start) start = new Date(FIXED_DATA.contractSigning.getFullYear(), FIXED_DATA.contractSigning.getMonth() - 1, 1);
+  if (FIXED_DATA.contractEnd     > end)   end   = new Date(FIXED_DATA.contractEnd.getFullYear(),     FIXED_DATA.contractEnd.getMonth() + 2,     1);
 
   // Accommodate possible Rise Renewal end
   const possibleRiseEnd = addMonths(MUTABLE.possibleRiseStart, FIXED_DATA.possibleRiseRenewalDuration);
@@ -624,15 +608,7 @@ function startDrag(e, el, trackEl, rangeStart, rangeEnd, type, tooltipFn) {
   e.stopPropagation();
   hideTooltip();
   const anchorDate = xToDate(e.clientX, trackEl, rangeStart, rangeEnd);
-  dragState = {
-    trackEl, rangeStart, rangeEnd, type, anchorDate, tooltipFn,
-    // Snapshot contract dates once at drag start so re-renders don't corrupt them
-    origDates: type === 'contract' ? {
-      signing: new Date(MUTABLE.contractSigning),
-      start:   new Date(MUTABLE.contractStart),
-      end:     new Date(MUTABLE.contractEnd),
-    } : null,
-  };
+  dragState = { trackEl, rangeStart, rangeEnd, type, anchorDate, tooltipFn };
   el.classList.add('dragging');
   document.body.classList.add('dragging-active');
   showDragTooltip(e.clientX, e.clientY, tooltipFn(anchorDate));
@@ -641,7 +617,6 @@ function startDrag(e, el, trackEl, rangeStart, rangeEnd, type, tooltipFn) {
 document.addEventListener('mousemove', (e) => {
   if (!dragState) return;
   const newDate = xToDate(e.clientX, dragState.trackEl, dragState.rangeStart, dragState.rangeEnd);
-  const delta   = daysDiff(dragState.anchorDate, newDate); // days shifted since drag start
 
   if (dragState.type === 'ld1') {
     const input = document.getElementById('ld1Input');
@@ -664,17 +639,6 @@ document.addEventListener('mousemove', (e) => {
       MUTABLE.possibleRiseStart = newStart;
       render();
     }
-
-  } else if (dragState.type === 'contract') {
-    // Shift the entire contract block (signing, start, end) by delta days from anchor
-    const d = daysDiff(dragState.anchorDate, newDate);
-    if (d !== 0) {
-      const orig = dragState.origDates;
-      MUTABLE.contractSigning = shiftDate(orig.signing, d);
-      MUTABLE.contractStart   = shiftDate(orig.start,   d);
-      MUTABLE.contractEnd     = shiftDate(orig.end,     d);
-      render();
-    }
   }
 
   showDragTooltip(e.clientX, e.clientY, dragState.tooltipFn(newDate));
@@ -683,7 +647,7 @@ document.addEventListener('mousemove', (e) => {
 document.addEventListener('mouseup', () => {
   if (!dragState) return;
   document.body.classList.remove('dragging-active');
-  document.querySelectorAll('.marker.dragging, .bar.dragging').forEach(el => el.classList.remove('dragging'));
+  document.querySelectorAll('.marker.dragging').forEach(el => el.classList.remove('dragging'));
   hideDragTooltip();
   dragState = null;
 });
@@ -861,24 +825,17 @@ function render() {
 
   {
     const { row, track } = makeRow('Contract Period');
-    // Draggable bar — shifts whole contract block
-    addBar(track, MUTABLE.contractSigning, MUTABLE.contractEnd,
+    addBar(track, FIXED_DATA.contractSigning, FIXED_DATA.contractEnd,
       'bar-subscriptions',
-      `Contract (${fmtDate(MUTABLE.contractSigning)} – ${fmtDate(MUTABLE.contractEnd)})`,
-      null,
-      'contract',
-      (d) => {
-        const delta = daysDiff(dragState ? dragState.anchorDate : d, d);
-        return `Contract: ${fmtDate(shiftDate(MUTABLE.contractSigning, delta))} – ${fmtDate(shiftDate(MUTABLE.contractEnd, delta))}`;
-      }
+      `Contract (${fmtDate(FIXED_DATA.contractSigning)} – ${fmtDate(FIXED_DATA.contractEnd)})`,
+      `<strong>Alcoa Contract Period</strong>Signing: ${fmtDate(FIXED_DATA.contractSigning)}<br>Start: ${fmtDate(FIXED_DATA.contractStart)}<br>End: ${fmtDate(FIXED_DATA.contractEnd)}`
     );
-    // Signing marker (not individually draggable — bar drag moves all three)
-    addMarker(track, MUTABLE.contractSigning, '#4a90d9',
-      `<strong>Contract Signing</strong>${fmtDate(MUTABLE.contractSigning)}`, 'Signing');
-    addMarker(track, MUTABLE.contractStart, '#4a90d9',
-      `<strong>Contract Start</strong>${fmtDate(MUTABLE.contractStart)}`, 'Start');
-    addMarker(track, MUTABLE.contractEnd, '#4a90d9',
-      `<strong>Contract End</strong>${fmtDate(MUTABLE.contractEnd)}`, 'End');
+    addMarker(track, FIXED_DATA.contractSigning, '#4a90d9',
+      `<strong>Contract Signing</strong>${fmtDate(FIXED_DATA.contractSigning)}`, 'Signing');
+    addMarker(track, FIXED_DATA.contractStart, '#4a90d9',
+      `<strong>Contract Start</strong>${fmtDate(FIXED_DATA.contractStart)}`, 'Start');
+    addMarker(track, FIXED_DATA.contractEnd, '#4a90d9',
+      `<strong>Contract End</strong>${fmtDate(FIXED_DATA.contractEnd)}`, 'End');
     wrapper.appendChild(row);
   }
 
@@ -953,9 +910,9 @@ function render() {
     const ext2End     = addMonths(ext1End, TSA_DEF.ext2);
 
     const contractMilestones = [
-      { date: MUTABLE.contractSigning, tip: `<strong>Contract Signing</strong>${fmtDate(MUTABLE.contractSigning)}` },
-      { date: MUTABLE.contractStart,   tip: `<strong>Contract Start</strong>${fmtDate(MUTABLE.contractStart)}` },
-      { date: MUTABLE.contractEnd,     tip: `<strong>Contract End</strong>${fmtDate(MUTABLE.contractEnd)}` },
+      { date: FIXED_DATA.contractSigning, tip: `<strong>Contract Signing</strong>${fmtDate(FIXED_DATA.contractSigning)}` },
+      { date: FIXED_DATA.contractStart,   tip: `<strong>Contract Start</strong>${fmtDate(FIXED_DATA.contractStart)}` },
+      { date: FIXED_DATA.contractEnd,     tip: `<strong>Contract End</strong>${fmtDate(FIXED_DATA.contractEnd)}` },
     ];
     const renewalMilestones = [
       { date: MUTABLE.riseRenewal,               tip: `<strong>Current Rise Renewal</strong>${fmtDate(MUTABLE.riseRenewal)}` },
