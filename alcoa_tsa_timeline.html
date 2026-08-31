@@ -624,7 +624,15 @@ function startDrag(e, el, trackEl, rangeStart, rangeEnd, type, tooltipFn) {
   e.stopPropagation();
   hideTooltip();
   const anchorDate = xToDate(e.clientX, trackEl, rangeStart, rangeEnd);
-  dragState = { trackEl, rangeStart, rangeEnd, type, anchorX: e.clientX, anchorDate, tooltipFn };
+  dragState = {
+    trackEl, rangeStart, rangeEnd, type, anchorDate, tooltipFn,
+    // Snapshot contract dates once at drag start so re-renders don't corrupt them
+    origDates: type === 'contract' ? {
+      signing: new Date(MUTABLE.contractSigning),
+      start:   new Date(MUTABLE.contractStart),
+      end:     new Date(MUTABLE.contractEnd),
+    } : null,
+  };
   el.classList.add('dragging');
   document.body.classList.add('dragging-active');
   showDragTooltip(e.clientX, e.clientY, tooltipFn(anchorDate));
@@ -778,13 +786,8 @@ function render() {
     bar.textContent = label;
     if (dragType) {
       bar.addEventListener('mousedown', (e) => {
-        const origDates = {
-          signing: new Date(MUTABLE.contractSigning),
-          start:   new Date(MUTABLE.contractStart),
-          end:     new Date(MUTABLE.contractEnd),
-        };
-        startDrag(e, bar, track, start, end, dragType, dragTooltipFn);
-        if (dragType === 'contract') dragState.origDates = origDates;
+        // Only start a new drag if none is active (prevents re-render from re-triggering)
+        if (!dragState) startDrag(e, bar, track, start, end, dragType, dragTooltipFn);
       });
     } else if (tooltipHTML) {
       bar.addEventListener('mouseenter', (e) => showTooltip(e, tooltipHTML));
@@ -805,7 +808,9 @@ function render() {
     m.style.background = colorHex;
     m.style.color      = colorHex; // used by currentColor in CSS box-shadow
     if (dragType) {
-      m.addEventListener('mousedown', (e) => startDrag(e, m, track, start, end, dragType, dragTooltipFn));
+      m.addEventListener('mousedown', (e) => {
+        if (!dragState) startDrag(e, m, track, start, end, dragType, dragTooltipFn);
+      });
       // Re-attach dragging class after re-render if this is the active drag
       if (dragState && dragState.type === dragType) {
         m.classList.add('dragging');
