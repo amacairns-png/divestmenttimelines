@@ -45,7 +45,8 @@
     flex-direction: column;
     gap: 5px;
     padding-bottom: 16px;
-    padding-right: 20px;
+    width: 200px;
+    min-width: 200px;
     flex-shrink: 0;
   }
 
@@ -675,9 +676,6 @@ function render() {
   // ── Year + Month axis (placed in controls bar) ───────────────────────
   const axisHeader = document.createElement('div');
   axisHeader.className = 'axis-header';
-  // Offset to align with the track area: row-label width (200px) + chart padding difference
-  // Controls bar padding: 24px; chart-container padding: 24px — same, so offset = 200px
-  axisHeader.style.paddingLeft = '200px';
 
   // Build year groups: find consecutive months belonging to each year
   const yearGroups = [];
@@ -839,18 +837,21 @@ function render() {
   wrapper.appendChild(secSub);
 
   {
-    const { row, track } = makeRow('Contract Period');
-    addBar(track, FIXED_DATA.contractSigning, FIXED_DATA.contractEnd,
-      'bar-subscriptions',
-      `Contract (${fmtDate(FIXED_DATA.contractSigning)} – ${fmtDate(FIXED_DATA.contractEnd)})`,
-      `<strong>Alcoa Contract Period</strong>Signing: ${fmtDate(FIXED_DATA.contractSigning)}<br>Start: ${fmtDate(FIXED_DATA.contractStart)}<br>End: ${fmtDate(FIXED_DATA.contractEnd)}`
-    );
+    const { row, track } = makeRow('Contract Signing');
     addMarker(track, FIXED_DATA.contractSigning, '#4a90d9',
-      `<strong>Contract Signing</strong>${fmtDate(FIXED_DATA.contractSigning)}`, 'Signing');
+      `<strong>Contract Signing</strong>${fmtDate(FIXED_DATA.contractSigning)}`, fmtDate(FIXED_DATA.contractSigning));
+    wrapper.appendChild(row);
+  }
+  {
+    const { row, track } = makeRow('Contract Period');
+    addBar(track, FIXED_DATA.contractStart, FIXED_DATA.contractEnd,
+      'bar-subscriptions', '',
+      `<strong>Contract Period</strong>Start: ${fmtDate(FIXED_DATA.contractStart)}<br>End: ${fmtDate(FIXED_DATA.contractEnd)}`
+    );
     addMarker(track, FIXED_DATA.contractStart, '#4a90d9',
-      `<strong>Contract Start</strong>${fmtDate(FIXED_DATA.contractStart)}`, 'Start');
+      `<strong>Contract Start</strong>${fmtDate(FIXED_DATA.contractStart)}`, fmtDate(FIXED_DATA.contractStart));
     addMarker(track, FIXED_DATA.contractEnd, '#4a90d9',
-      `<strong>Contract End</strong>${fmtDate(FIXED_DATA.contractEnd)}`, 'End');
+      `<strong>Contract End</strong>${fmtDate(FIXED_DATA.contractEnd)}`, fmtDate(FIXED_DATA.contractEnd));
     wrapper.appendChild(row);
   }
 
@@ -1030,13 +1031,19 @@ function updateInfoPanel(ld1, existingEnd, coreEnd, ext1End, ext2End) {
   const grid  = document.getElementById('infoGrid');
   panel.classList.add('visible');
 
+  function lastDay(d) {
+    const r = new Date(d);
+    r.setDate(r.getDate() - 1);
+    return r;
+  }
+
   const cards = [
-    { title: 'Legal Day 1',                    color: '#e53e3e', from: ld1,     to: null,        dur: '' },
-    { title: 'Existing TSA',                   color: '#5b8c5a', from: ld1,     to: existingEnd, dur: '6 months from LD1' },
-    { title: 'Core TSA',                       color: '#2d7a4f', from: ld1,     to: coreEnd,     dur: '12 months from LD1' },
-    { title: 'Extension 1 - Core plus',        color: '#c57c2e', from: coreEnd, to: ext1End,     dur: '+3 months after Core TSA' },
-    { title: 'Extension 2 - Extension 1 plus', color: '#9b3a3a', from: ext1End, to: ext2End,     dur: '+3 months after Extension 1' },
-    { title: 'Max TSA Period',                 color: '#4a2e7a', from: ld1,     to: ext2End,     dur: `${TSA_DEF.core + TSA_DEF.ext1 + TSA_DEF.ext2} months from LD1` },
+    { title: 'Legal Day 1',                    color: '#e53e3e', from: ld1,              to: null,               dur: '' },
+    { title: 'Existing TSA',                   color: '#5b8c5a', from: ld1,              to: lastDay(existingEnd), dur: '6 months from LD1' },
+    { title: 'Core TSA',                       color: '#2d7a4f', from: ld1,              to: lastDay(coreEnd),     dur: '12 months from LD1' },
+    { title: 'Extension 1 - Core plus',        color: '#c57c2e', from: lastDay(coreEnd), to: lastDay(ext1End),     dur: '+3 months after Core TSA' },
+    { title: 'Extension 2 - Extension 1 plus', color: '#9b3a3a', from: lastDay(ext1End), to: lastDay(ext2End),     dur: '+3 months after Extension 1' },
+    { title: 'Max TSA Period',                 color: '#4a2e7a', from: ld1,              to: lastDay(ext2End),     dur: `${TSA_DEF.core + TSA_DEF.ext1 + TSA_DEF.ext2} months from LD1` },
   ];
 
   grid.innerHTML = cards.map(c => `
