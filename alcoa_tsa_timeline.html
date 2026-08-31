@@ -242,20 +242,28 @@
     cursor: ew-resize;
     width: 18px;
     height: 18px;
-    box-shadow: 0 0 0 2px #fff, 0 0 0 4px #e53e3e;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor;
   }
 
   .marker.draggable:hover {
-    box-shadow: 0 0 0 2px #fff, 0 0 0 5px #e53e3e, 0 2px 8px rgba(229,62,62,0.4);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 5px currentColor, 0 2px 8px rgba(0,0,0,0.25);
   }
 
   .marker.dragging {
     cursor: ew-resize;
-    box-shadow: 0 0 0 2px #fff, 0 0 0 5px #e53e3e, 0 4px 16px rgba(229,62,62,0.5);
+    box-shadow: 0 0 0 2px #fff, 0 0 0 5px currentColor, 0 4px 16px rgba(0,0,0,0.3);
     filter: brightness(1.2);
   }
 
-  body.dragging-ld1 {
+  .bar.draggable-bar {
+    cursor: ew-resize;
+  }
+
+  .bar.draggable-bar:active {
+    filter: brightness(1.15);
+  }
+
+  body.dragging-active {
     cursor: ew-resize !important;
     user-select: none;
   }
@@ -487,21 +495,29 @@
 // ─────────────────────────────────────────────
 
 const FIXED_DATA = {
-  contractSigning:        new Date('2026-12-31'),
-  contractStart:          new Date('2027-03-31'),
-  contractEnd:            new Date('2029-03-30'),
-  riseRenewal:            new Date('2027-09-17'),
+  contractSigning:             new Date('2026-12-31'),
+  contractStart:               new Date('2027-03-31'),
+  contractEnd:                 new Date('2029-03-30'),
+  aribaRenewal:                new Date('2027-09-15'),
+  successFactorsRenewal:       new Date('2028-04-03'),
   possibleRiseRenewalDuration: 24, // 2 years in months
-  aribaRenewal:           new Date('2027-09-15'),
-  successFactorsRenewal:  new Date('2028-04-03'),
+};
+
+// Mutable draggable dates
+const MUTABLE = {
+  riseRenewal:         new Date('2027-09-17'),
+  possibleRiseStart:   new Date('2027-09-17'), // tracks with riseRenewal by default
+  contractSigning:     new Date('2026-12-31'),
+  contractStart:       new Date('2027-03-31'),
+  contractEnd:         new Date('2029-03-30'),
 };
 
 // TSA duration definitions (months)
 const TSA_DEF = {
-  existingTSA: 6,   // months from Legal Day 1
-  core:        12,  // months from Legal Day 1
-  ext1:         3,  // months after core
-  ext2:         3,  // months after ext1
+  existingTSA: 6,
+  core:        12,
+  ext1:         3,
+  ext2:         3,
 };
 
 // ─────────────────────────────────────────────
@@ -520,11 +536,20 @@ function fmtDate(d) {
 }
 
 function toInputValue(d) {
-  // yyyy-mm-dd for <input type="date">
   const y = d.getFullYear();
   const m = String(d.getMonth() + 1).padStart(2, '0');
   const day = String(d.getDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
+}
+
+function daysDiff(a, b) {
+  return Math.round((b - a) / 86400000);
+}
+
+function shiftDate(d, days) {
+  const r = new Date(d);
+  r.setDate(r.getDate() + days);
+  return r;
 }
 
 // ─────────────────────────────────────────────
@@ -534,6 +559,16 @@ function toInputValue(d) {
 function getTimelineRange(ld1) {
   let start = new Date('2026-10-01');
   let end   = new Date('2030-06-01');
+
+  // Accommodate dragged contract period
+  const contractEarliestStart = new Date(Math.min(MUTABLE.contractSigning, MUTABLE.contractStart));
+  const contractLatestEnd     = MUTABLE.contractEnd;
+  if (contractEarliestStart < start) start = new Date(contractEarliestStart.getFullYear(), contractEarliestStart.getMonth() - 1, 1);
+  if (contractLatestEnd > end)       end   = new Date(contractLatestEnd.getFullYear(),     contractLatestEnd.getMonth() + 2,    1);
+
+  // Accommodate possible Rise Renewal end
+  const possibleRiseEnd = addMonths(MUTABLE.possibleRiseStart, FIXED_DATA.possibleRiseRenewalDuration);
+  if (possibleRiseEnd > end) end = new Date(possibleRiseEnd.getFullYear(), possibleRiseEnd.getMonth() + 2, 1);
 
   if (ld1) {
     const tsaEnd = addMonths(ld1, TSA_DEF.core + TSA_DEF.ext1 + TSA_DEF.ext2 + 2);
@@ -567,63 +602,91 @@ function dateToPercent(date, start, end) {
   return Math.max(0, Math.min(100, (offset / total) * 100));
 }
 
-// Convert a pixel X position within a track element to a Date
 function xToDate(clientX, trackEl, rangeStart, rangeEnd) {
   const rect = trackEl.getBoundingClientRect();
   const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
   const ms = rangeStart.getTime() + pct * (rangeEnd.getTime() - rangeStart.getTime());
   const d = new Date(ms);
-  // Snap to nearest day
   d.setHours(0, 0, 0, 0);
   return d;
 }
 
 // ─────────────────────────────────────────────
-//  DRAG STATE
+//  GENERIC DRAG ENGINE
 // ─────────────────────────────────────────────
 
-let dragState = null; // { trackEl, rangeStart, rangeEnd }
+// dragState: { trackEl, rangeStart, rangeEnd, type, anchorX, anchorDate, tooltipFn }
+let dragState = null;
 
-function initDrag(markerEl, trackEl, rangeStart, rangeEnd) {
-  markerEl.classList.add('draggable');
-
-  markerEl.addEventListener('mousedown', (e) => {
-    e.preventDefault();
-    hideTooltip();
-    dragState = { trackEl, rangeStart, rangeEnd };
-    markerEl.classList.add('dragging');
-    document.body.classList.add('dragging-ld1');
-    showDragTooltip(e.clientX, e.clientY, xToDate(e.clientX, trackEl, rangeStart, rangeEnd));
-  });
+// type = 'ld1' | 'rise' | 'possibleRise' | 'contract'
+function startDrag(e, el, trackEl, rangeStart, rangeEnd, type, tooltipFn) {
+  e.preventDefault();
+  e.stopPropagation();
+  hideTooltip();
+  const anchorDate = xToDate(e.clientX, trackEl, rangeStart, rangeEnd);
+  dragState = { trackEl, rangeStart, rangeEnd, type, anchorX: e.clientX, anchorDate, tooltipFn };
+  el.classList.add('dragging');
+  document.body.classList.add('dragging-active');
+  showDragTooltip(e.clientX, e.clientY, tooltipFn(anchorDate));
 }
 
 document.addEventListener('mousemove', (e) => {
   if (!dragState) return;
-  const date = xToDate(e.clientX, dragState.trackEl, dragState.rangeStart, dragState.rangeEnd);
-  showDragTooltip(e.clientX, e.clientY, date);
+  const newDate = xToDate(e.clientX, dragState.trackEl, dragState.rangeStart, dragState.rangeEnd);
+  const delta   = daysDiff(dragState.anchorDate, newDate); // days shifted since drag start
 
-  // Live update input and re-render
-  const input = document.getElementById('ld1Input');
-  const newVal = toInputValue(date);
-  if (input.value !== newVal) {
-    input.value = newVal;
-    render();
+  if (dragState.type === 'ld1') {
+    const input = document.getElementById('ld1Input');
+    const val = toInputValue(newDate);
+    if (input.value !== val) { input.value = val; render(); }
+
+  } else if (dragState.type === 'rise') {
+    // Current Rise Renewal: move riseRenewal; possibleRiseStart tracks it
+    const newRise = xToDate(e.clientX, dragState.trackEl, dragState.rangeStart, dragState.rangeEnd);
+    if (newRise.getTime() !== MUTABLE.riseRenewal.getTime()) {
+      MUTABLE.riseRenewal       = newRise;
+      MUTABLE.possibleRiseStart = new Date(newRise); // keep linked
+      render();
+    }
+
+  } else if (dragState.type === 'possibleRise') {
+    // Possible Rise Renewal bar: move its own start independently
+    const newStart = xToDate(e.clientX, dragState.trackEl, dragState.rangeStart, dragState.rangeEnd);
+    if (newStart.getTime() !== MUTABLE.possibleRiseStart.getTime()) {
+      MUTABLE.possibleRiseStart = newStart;
+      render();
+    }
+
+  } else if (dragState.type === 'contract') {
+    // Shift the entire contract block (signing, start, end) by delta days from anchor
+    const d = daysDiff(dragState.anchorDate, newDate);
+    if (d !== 0) {
+      const orig = dragState.origDates;
+      MUTABLE.contractSigning = shiftDate(orig.signing, d);
+      MUTABLE.contractStart   = shiftDate(orig.start,   d);
+      MUTABLE.contractEnd     = shiftDate(orig.end,     d);
+      render();
+    }
   }
+
+  showDragTooltip(e.clientX, e.clientY, dragState.tooltipFn(newDate));
 });
 
-document.addEventListener('mouseup', (e) => {
+document.addEventListener('mouseup', () => {
   if (!dragState) return;
-  document.body.classList.remove('dragging-ld1');
-  // find the newly rendered marker and remove dragging class
-  const markers = document.querySelectorAll('.marker.dragging');
-  markers.forEach(m => m.classList.remove('dragging'));
+  document.body.classList.remove('dragging-active');
+  document.querySelectorAll('.marker.dragging, .bar.dragging').forEach(el => el.classList.remove('dragging'));
   hideDragTooltip();
   dragState = null;
 });
 
-function showDragTooltip(clientX, clientY, date) {
+// ─────────────────────────────────────────────
+//  DRAG TOOLTIP
+// ─────────────────────────────────────────────
+
+function showDragTooltip(clientX, clientY, text) {
   const dt = document.getElementById('dragTooltip');
-  dt.textContent = 'Legal Day 1: ' + fmtDate(date);
+  dt.textContent = text;
   dt.style.display = 'block';
   dt.style.left = clientX + 'px';
   dt.style.top  = (clientY - 36) + 'px';
@@ -675,19 +738,16 @@ function render() {
   }
   wrapper.appendChild(todayLabelRow);
 
-  // Helper: make a row with grid lines + optional today line
-  function makeRow(labelText, rowClass) {
+  // ── Row factory ──────────────────────────────
+  function makeRow(labelText) {
     const row = document.createElement('div');
-    row.className = 'tl-row' + (rowClass ? ' ' + rowClass : '');
-
+    row.className = 'tl-row';
     const lbl = document.createElement('div');
     lbl.className = 'row-label';
     lbl.textContent = labelText;
     row.appendChild(lbl);
-
     const track = document.createElement('div');
     track.className = 'row-track';
-
     months.forEach((m) => {
       const pct = dateToPercent(m, start, end);
       const gl = document.createElement('div');
@@ -695,7 +755,6 @@ function render() {
       gl.style.left = pct + '%';
       track.appendChild(gl);
     });
-
     if (today >= start && today <= end) {
       const pct = dateToPercent(today, start, end);
       const tl = document.createElement('div');
@@ -703,45 +762,63 @@ function render() {
       tl.style.left = pct + '%';
       track.appendChild(tl);
     }
-
     row.appendChild(track);
     return { row, track };
   }
 
-  // Helper: add a bar to a track
-  function addBar(track, dateFrom, dateTo, colorClass, label, tooltipHTML) {
-    if (dateTo <= start || dateFrom >= end) return;
+  // ── Bar helper ───────────────────────────────
+  function addBar(track, dateFrom, dateTo, colorClass, label, tooltipHTML, dragType, dragTooltipFn) {
+    if (dateTo <= start || dateFrom >= end) return null;
     const pctL = dateToPercent(dateFrom, start, end);
     const pctR = dateToPercent(dateTo,   start, end);
     const bar = document.createElement('div');
-    bar.className = 'bar ' + colorClass;
+    bar.className = 'bar ' + colorClass + (dragType ? ' draggable-bar' : '');
     bar.style.left  = pctL + '%';
     bar.style.width = Math.max(0.3, pctR - pctL) + '%';
     bar.textContent = label;
-    if (tooltipHTML) {
+    if (dragType) {
+      bar.addEventListener('mousedown', (e) => {
+        const origDates = {
+          signing: new Date(MUTABLE.contractSigning),
+          start:   new Date(MUTABLE.contractStart),
+          end:     new Date(MUTABLE.contractEnd),
+        };
+        startDrag(e, bar, track, start, end, dragType, dragTooltipFn);
+        if (dragType === 'contract') dragState.origDates = origDates;
+      });
+    } else if (tooltipHTML) {
       bar.addEventListener('mouseenter', (e) => showTooltip(e, tooltipHTML));
       bar.addEventListener('mousemove',  (e) => moveTooltip(e));
       bar.addEventListener('mouseleave', hideTooltip);
     }
     track.appendChild(bar);
+    return bar;
   }
 
-  // Helper: add a diamond marker
-  function addMarker(track, date, colorHex, tooltipHTML, labelText, draggable) {
+  // ── Marker helper ────────────────────────────
+  function addMarker(track, date, colorHex, tooltipHTML, labelText, dragType, dragTooltipFn) {
     if (date < start || date > end) return null;
     const pct = dateToPercent(date, start, end);
-
     const m = document.createElement('div');
-    m.className = 'marker';
+    m.className = 'marker' + (dragType ? ' draggable' : '');
     m.style.left       = `calc(${pct}% - 7px)`;
     m.style.background = colorHex;
-    if (!draggable && tooltipHTML) {
+    m.style.color      = colorHex; // used by currentColor in CSS box-shadow
+    if (dragType) {
+      m.addEventListener('mousedown', (e) => startDrag(e, m, track, start, end, dragType, dragTooltipFn));
+      // Re-attach dragging class after re-render if this is the active drag
+      if (dragState && dragState.type === dragType) {
+        m.classList.add('dragging');
+        dragState.trackEl    = track;
+        dragState.rangeStart = start;
+        dragState.rangeEnd   = end;
+      }
+    } else if (tooltipHTML) {
       m.addEventListener('mouseenter', (e) => showTooltip(e, tooltipHTML));
       m.addEventListener('mousemove',  (e) => moveTooltip(e));
       m.addEventListener('mouseleave', hideTooltip);
     }
     track.appendChild(m);
-
     if (labelText) {
       const lbl = document.createElement('div');
       lbl.className = 'marker-label';
@@ -749,11 +826,10 @@ function render() {
       lbl.textContent = labelText;
       track.appendChild(lbl);
     }
-
     return m;
   }
 
-  // Helper: add a dashed vertical milestone drop-line
+  // ── Milestone drop-line helper ───────────────
   function addMilestoneLine(track, date, styleClass, tooltipHTML) {
     if (date < start || date > end) return;
     const pct = dateToPercent(date, start, end);
@@ -770,7 +846,9 @@ function render() {
     track.appendChild(line);
   }
 
-  // ── SECTION: South32 Divestment Subscriptions ──
+  // ══════════════════════════════════════════════
+  //  SECTION: South32 Divestment Subscriptions
+  // ══════════════════════════════════════════════
   const secSub = document.createElement('div');
   secSub.className = 'section-label';
   secSub.textContent = 'South32 Divestment Subscriptions';
@@ -778,42 +856,70 @@ function render() {
 
   {
     const { row, track } = makeRow('Contract Period');
-    addBar(track, FIXED_DATA.contractSigning, FIXED_DATA.contractEnd,
-      'bar-subscriptions', 'Contract (Dec 2026 – Mar 2029)',
-      `<strong>Alcoa Contract Period</strong>Signing: ${fmtDate(FIXED_DATA.contractSigning)}<br>Start: ${fmtDate(FIXED_DATA.contractStart)}<br>End: ${fmtDate(FIXED_DATA.contractEnd)}`);
-    addMarker(track, FIXED_DATA.contractSigning, '#4a90d9',
-      `<strong>Contract Signing</strong>${fmtDate(FIXED_DATA.contractSigning)}`, 'Signing');
-    addMarker(track, FIXED_DATA.contractStart, '#4a90d9',
-      `<strong>Contract Start</strong>${fmtDate(FIXED_DATA.contractStart)}`, 'Start');
-    addMarker(track, FIXED_DATA.contractEnd, '#4a90d9',
-      `<strong>Contract End</strong>${fmtDate(FIXED_DATA.contractEnd)}`, 'End');
+    // Draggable bar — shifts whole contract block
+    addBar(track, MUTABLE.contractSigning, MUTABLE.contractEnd,
+      'bar-subscriptions',
+      `Contract (${fmtDate(MUTABLE.contractSigning)} – ${fmtDate(MUTABLE.contractEnd)})`,
+      null,
+      'contract',
+      (d) => {
+        const delta = daysDiff(dragState ? dragState.anchorDate : d, d);
+        return `Contract: ${fmtDate(shiftDate(MUTABLE.contractSigning, delta))} – ${fmtDate(shiftDate(MUTABLE.contractEnd, delta))}`;
+      }
+    );
+    // Signing marker (not individually draggable — bar drag moves all three)
+    addMarker(track, MUTABLE.contractSigning, '#4a90d9',
+      `<strong>Contract Signing</strong>${fmtDate(MUTABLE.contractSigning)}`, 'Signing');
+    addMarker(track, MUTABLE.contractStart, '#4a90d9',
+      `<strong>Contract Start</strong>${fmtDate(MUTABLE.contractStart)}`, 'Start');
+    addMarker(track, MUTABLE.contractEnd, '#4a90d9',
+      `<strong>Contract End</strong>${fmtDate(MUTABLE.contractEnd)}`, 'End');
     wrapper.appendChild(row);
   }
 
-  // ── SECTION: South32 Subscriptions ──────────
+  // ══════════════════════════════════════════════
+  //  SECTION: South32 Subscriptions
+  // ══════════════════════════════════════════════
   const secS32Sub = document.createElement('div');
   secS32Sub.className = 'section-label';
   secS32Sub.textContent = 'South32 Subscriptions';
   wrapper.appendChild(secS32Sub);
 
+  // Current Rise Renewal — draggable marker
   {
     const { row, track } = makeRow('Current Rise Renewal');
-    addMarker(track, FIXED_DATA.riseRenewal, '#e07b39',
-      `<strong>Current Rise Renewal</strong>${fmtDate(FIXED_DATA.riseRenewal)}`, fmtDate(FIXED_DATA.riseRenewal));
+    addMarker(track, MUTABLE.riseRenewal, '#e07b39',
+      null,
+      fmtDate(MUTABLE.riseRenewal),
+      'rise',
+      (d) => `Current Rise Renewal: ${fmtDate(d)}`
+    );
     wrapper.appendChild(row);
   }
 
-  // Possible Rise Renewal — 2-year bar from current renewal date
+  // Possible Rise Renewal — draggable bar (independent start)
   {
-    const possibleRiseEnd = addMonths(FIXED_DATA.riseRenewal, FIXED_DATA.possibleRiseRenewalDuration);
+    const possibleRiseEnd = addMonths(MUTABLE.possibleRiseStart, FIXED_DATA.possibleRiseRenewalDuration);
     const { row, track } = makeRow('Possible Rise Renewal');
-    addBar(track, FIXED_DATA.riseRenewal, possibleRiseEnd, 'bar-possible-rise',
-      'Possible Rise Renewal — 2 years',
-      `<strong>Possible Rise Renewal</strong>Start: ${fmtDate(FIXED_DATA.riseRenewal)}<br>End: ${fmtDate(possibleRiseEnd)}<br>Duration: 2 years`);
+    addBar(track, MUTABLE.possibleRiseStart, possibleRiseEnd,
+      'bar-possible-rise',
+      `Possible Rise Renewal — 2 years`,
+      null,
+      'possibleRise',
+      (d) => `Possible Rise: ${fmtDate(d)} – ${fmtDate(addMonths(d, FIXED_DATA.possibleRiseRenewalDuration))}`
+    );
+    // End marker (non-draggable, informational)
     addMarker(track, possibleRiseEnd, '#e07b39',
       `<strong>Possible Rise Renewal End</strong>${fmtDate(possibleRiseEnd)}`, '');
+    // Re-attach dragging state for bar after re-render
+    if (dragState && dragState.type === 'possibleRise') {
+      dragState.trackEl    = track;
+      dragState.rangeStart = start;
+      dragState.rangeEnd   = end;
+    }
     wrapper.appendChild(row);
   }
+
   {
     const { row, track } = makeRow('Ariba Renewal');
     addMarker(track, FIXED_DATA.aribaRenewal, '#e07b39',
@@ -827,7 +933,9 @@ function render() {
     wrapper.appendChild(row);
   }
 
-  // ── SECTION: South32 Alcoa TSA ──────────────
+  // ══════════════════════════════════════════════
+  //  SECTION: South32 & Alcoa TSA
+  // ══════════════════════════════════════════════
   const secTSA = document.createElement('div');
   secTSA.className = 'section-label';
   secTSA.textContent = 'South32 & Alcoa TSA — ' + (ld1 ? ('Legal Day 1: ' + fmtDate(ld1)) : 'Enter Legal Day 1 date above');
@@ -840,14 +948,14 @@ function render() {
     const ext2End     = addMonths(ext1End, TSA_DEF.ext2);
 
     const contractMilestones = [
-      { date: FIXED_DATA.contractSigning, tip: `<strong>Contract Signing</strong>${fmtDate(FIXED_DATA.contractSigning)}` },
-      { date: FIXED_DATA.contractStart,   tip: `<strong>Contract Start</strong>${fmtDate(FIXED_DATA.contractStart)}` },
-      { date: FIXED_DATA.contractEnd,     tip: `<strong>Contract End</strong>${fmtDate(FIXED_DATA.contractEnd)}` },
+      { date: MUTABLE.contractSigning, tip: `<strong>Contract Signing</strong>${fmtDate(MUTABLE.contractSigning)}` },
+      { date: MUTABLE.contractStart,   tip: `<strong>Contract Start</strong>${fmtDate(MUTABLE.contractStart)}` },
+      { date: MUTABLE.contractEnd,     tip: `<strong>Contract End</strong>${fmtDate(MUTABLE.contractEnd)}` },
     ];
     const renewalMilestones = [
-      { date: FIXED_DATA.riseRenewal,           tip: `<strong>Current Rise Renewal</strong>${fmtDate(FIXED_DATA.riseRenewal)}` },
-      { date: FIXED_DATA.aribaRenewal,          tip: `<strong>Ariba Renewal</strong>${fmtDate(FIXED_DATA.aribaRenewal)}` },
-      { date: FIXED_DATA.successFactorsRenewal, tip: `<strong>SuccessFactors Renewal</strong>${fmtDate(FIXED_DATA.successFactorsRenewal)}` },
+      { date: MUTABLE.riseRenewal,               tip: `<strong>Current Rise Renewal</strong>${fmtDate(MUTABLE.riseRenewal)}` },
+      { date: FIXED_DATA.aribaRenewal,           tip: `<strong>Ariba Renewal</strong>${fmtDate(FIXED_DATA.aribaRenewal)}` },
+      { date: FIXED_DATA.successFactorsRenewal,  tip: `<strong>SuccessFactors Renewal</strong>${fmtDate(FIXED_DATA.successFactorsRenewal)}` },
     ];
 
     function addAllMilestoneLines(track) {
@@ -855,19 +963,11 @@ function render() {
       renewalMilestones.forEach(m  => addMilestoneLine(track, m.date, 'milestone-line-renewal',  m.tip));
     }
 
-    // Legal Day 1 — draggable marker row
+    // Legal Day 1 — draggable marker
     {
       const { row, track } = makeRow('Legal Day 1');
       addAllMilestoneLines(track);
-      const markerEl = addMarker(track, ld1, '#e53e3e', null, fmtDate(ld1), true);
-      if (markerEl) initDrag(markerEl, track, start, end);
-      // Re-apply dragging class if mid-drag (after re-render during drag)
-      if (dragState) {
-        markerEl && markerEl.classList.add('dragging');
-        dragState.trackEl = track;
-        dragState.rangeStart = start;
-        dragState.rangeEnd = end;
-      }
+      addMarker(track, ld1, '#e53e3e', null, fmtDate(ld1), 'ld1', (d) => `Legal Day 1: ${fmtDate(d)}`);
       wrapper.appendChild(row);
     }
 
