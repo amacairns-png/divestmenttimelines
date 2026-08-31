@@ -498,8 +498,11 @@ const FIXED_DATA = {
   contractSigning:             new Date('2026-12-31'),
   contractStart:               new Date('2027-03-31'),
   contractEnd:                 new Date('2029-03-30'),
-  aribaRenewal:                new Date('2027-09-15'),
-  successFactorsRenewal:       new Date('2028-04-03'),
+  aribaRenewal:                new Date('2027-09-21'),
+  successFactorsRenewal:       new Date('2027-05-17'),
+  cpeaRenewal:                 new Date('2027-09-17'),
+  signavioRenewal:             new Date('2027-09-17'),
+  concurRenewal:               new Date('2027-09-30'),
   possibleRiseRenewalDuration: 24, // 2 years in months
 };
 // Mutable draggable dates
@@ -894,6 +897,24 @@ function render() {
       `<strong>SuccessFactors Renewal</strong>${fmtDate(FIXED_DATA.successFactorsRenewal)}`, fmtDate(FIXED_DATA.successFactorsRenewal));
     wrapper.appendChild(row);
   }
+  {
+    const { row, track } = makeRow('CPEA Renewal');
+    addMarker(track, FIXED_DATA.cpeaRenewal, '#e07b39',
+      `<strong>CPEA Renewal</strong>${fmtDate(FIXED_DATA.cpeaRenewal)}`, fmtDate(FIXED_DATA.cpeaRenewal));
+    wrapper.appendChild(row);
+  }
+  {
+    const { row, track } = makeRow('Signavio Renewal');
+    addMarker(track, FIXED_DATA.signavioRenewal, '#e07b39',
+      `<strong>Signavio Renewal</strong>${fmtDate(FIXED_DATA.signavioRenewal)}`, fmtDate(FIXED_DATA.signavioRenewal));
+    wrapper.appendChild(row);
+  }
+  {
+    const { row, track } = makeRow('Concur Renewal');
+    addMarker(track, FIXED_DATA.concurRenewal, '#e07b39',
+      `<strong>Concur Renewal</strong>${fmtDate(FIXED_DATA.concurRenewal)}`, fmtDate(FIXED_DATA.concurRenewal));
+    wrapper.appendChild(row);
+  }
 
   // ══════════════════════════════════════════════
   //  SECTION: South32 & Alcoa TSA
@@ -918,6 +939,9 @@ function render() {
       { date: MUTABLE.riseRenewal,               tip: `<strong>Current Rise Renewal</strong>${fmtDate(MUTABLE.riseRenewal)}` },
       { date: FIXED_DATA.aribaRenewal,           tip: `<strong>Ariba Renewal</strong>${fmtDate(FIXED_DATA.aribaRenewal)}` },
       { date: FIXED_DATA.successFactorsRenewal,  tip: `<strong>SuccessFactors Renewal</strong>${fmtDate(FIXED_DATA.successFactorsRenewal)}` },
+      { date: FIXED_DATA.cpeaRenewal,            tip: `<strong>CPEA Renewal</strong>${fmtDate(FIXED_DATA.cpeaRenewal)}` },
+      { date: FIXED_DATA.signavioRenewal,        tip: `<strong>Signavio Renewal</strong>${fmtDate(FIXED_DATA.signavioRenewal)}` },
+      { date: FIXED_DATA.concurRenewal,          tip: `<strong>Concur Renewal</strong>${fmtDate(FIXED_DATA.concurRenewal)}` },
     ];
 
     function addAllMilestoneLines(track) {
