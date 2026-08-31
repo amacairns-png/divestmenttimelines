@@ -872,6 +872,11 @@ function render() {
       'rise',
       (d) => `Current Rise Renewal: ${fmtDate(d)}`
     );
+    if (ld1) {
+      const subBarEnd = addMonths(ld1, TSA_DEF.core + TSA_DEF.ext1 + TSA_DEF.ext2 + 1);
+      addBar(track, MUTABLE.riseRenewal, subBarEnd, 'bar-subscriptions', '',
+        `<strong>Current Rise Renewal Period</strong>From: ${fmtDate(MUTABLE.riseRenewal)}<br>To: ${fmtDate(subBarEnd)}`);
+    }
     wrapper.appendChild(row);
   }
 
@@ -902,30 +907,55 @@ function render() {
     const { row, track } = makeRow('Ariba Renewal');
     addMarker(track, FIXED_DATA.aribaRenewal, '#e07b39',
       `<strong>Ariba Renewal</strong>${fmtDate(FIXED_DATA.aribaRenewal)}`, fmtDate(FIXED_DATA.aribaRenewal));
+    if (ld1) {
+      const subBarEnd = addMonths(ld1, TSA_DEF.core + TSA_DEF.ext1 + TSA_DEF.ext2 + 1);
+      addBar(track, FIXED_DATA.aribaRenewal, subBarEnd, 'bar-subscriptions', '',
+        `<strong>Ariba Renewal Period</strong>From: ${fmtDate(FIXED_DATA.aribaRenewal)}<br>To: ${fmtDate(subBarEnd)}`);
+    }
     wrapper.appendChild(row);
   }
   {
     const { row, track } = makeRow('SuccessFactors Renewal');
     addMarker(track, FIXED_DATA.successFactorsRenewal, '#e07b39',
       `<strong>SuccessFactors Renewal</strong>${fmtDate(FIXED_DATA.successFactorsRenewal)}`, fmtDate(FIXED_DATA.successFactorsRenewal));
+    if (ld1) {
+      const subBarEnd = addMonths(ld1, TSA_DEF.core + TSA_DEF.ext1 + TSA_DEF.ext2 + 1);
+      addBar(track, FIXED_DATA.successFactorsRenewal, subBarEnd, 'bar-subscriptions', '',
+        `<strong>SuccessFactors Renewal Period</strong>From: ${fmtDate(FIXED_DATA.successFactorsRenewal)}<br>To: ${fmtDate(subBarEnd)}`);
+    }
     wrapper.appendChild(row);
   }
   {
     const { row, track } = makeRow('CPEA Renewal');
     addMarker(track, FIXED_DATA.cpeaRenewal, '#e07b39',
       `<strong>CPEA Renewal</strong>${fmtDate(FIXED_DATA.cpeaRenewal)}`, fmtDate(FIXED_DATA.cpeaRenewal));
+    if (ld1) {
+      const subBarEnd = addMonths(ld1, TSA_DEF.core + TSA_DEF.ext1 + TSA_DEF.ext2 + 1);
+      addBar(track, FIXED_DATA.cpeaRenewal, subBarEnd, 'bar-subscriptions', '',
+        `<strong>CPEA Renewal Period</strong>From: ${fmtDate(FIXED_DATA.cpeaRenewal)}<br>To: ${fmtDate(subBarEnd)}`);
+    }
     wrapper.appendChild(row);
   }
   {
     const { row, track } = makeRow('Signavio Renewal');
     addMarker(track, FIXED_DATA.signavioRenewal, '#e07b39',
       `<strong>Signavio Renewal</strong>${fmtDate(FIXED_DATA.signavioRenewal)}`, fmtDate(FIXED_DATA.signavioRenewal));
+    if (ld1) {
+      const subBarEnd = addMonths(ld1, TSA_DEF.core + TSA_DEF.ext1 + TSA_DEF.ext2 + 1);
+      addBar(track, FIXED_DATA.signavioRenewal, subBarEnd, 'bar-subscriptions', '',
+        `<strong>Signavio Renewal Period</strong>From: ${fmtDate(FIXED_DATA.signavioRenewal)}<br>To: ${fmtDate(subBarEnd)}`);
+    }
     wrapper.appendChild(row);
   }
   {
     const { row, track } = makeRow('Concur Renewal');
     addMarker(track, FIXED_DATA.concurRenewal, '#e07b39',
       `<strong>Concur Renewal</strong>${fmtDate(FIXED_DATA.concurRenewal)}`, fmtDate(FIXED_DATA.concurRenewal));
+    if (ld1) {
+      const subBarEnd = addMonths(ld1, TSA_DEF.core + TSA_DEF.ext1 + TSA_DEF.ext2 + 1);
+      addBar(track, FIXED_DATA.concurRenewal, subBarEnd, 'bar-subscriptions', '',
+        `<strong>Concur Renewal Period</strong>From: ${fmtDate(FIXED_DATA.concurRenewal)}<br>To: ${fmtDate(subBarEnd)}`);
+    }
     wrapper.appendChild(row);
   }
 
