@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Alcoa Divestment TSA Timelines</title>
+<title>South32 Asset Divestment to Alcoa</title>
 <style>
   * { box-sizing: border-box; margin: 0; padding: 0; }
 
@@ -365,7 +365,7 @@
   /* Color palette */
   .bar-subscriptions    { background: #4a90d9; }
   .bar-possible-rise    { background: #e07b39; opacity: 0.75; }
-  .bar-existing-tsa     { background: #5b8c5a; }
+  .bar-existing-tsa     { background: #4a90d9; }
   .bar-core           { background: #2d7a4f; }
   .bar-ext1           { background: #c57c2e; }
   .bar-ext2           { background: #9b3a3a; }
@@ -447,8 +447,11 @@
 </head>
 <body>
 
-<h1>Alcoa Divestment TSA Timelines</h1>
-<p class="subtitle">South32 / Alcoa Transition Service Agreement — Timeline Visualisation</p>
+<div style="display:flex; align-items:baseline; gap:24px; flex-wrap:wrap;">
+  <h1>South32 Asset Divestment to Alcoa</h1>
+  <p style="color:#e53e3e; font-size:1.5rem; font-weight:700; white-space:nowrap;">For discussion purposes and subject to SAP Management Approval</p>
+</div>
+<p class="subtitle">South32 & Alcoa Transition Service Agreement — Timeline Visualisation</p>
 
 <div class="controls">
   <div class="control-group">
@@ -855,14 +858,14 @@ function render() {
       wrapper.appendChild(row);
     }
 
-    // Existing TSA
+    // Existing SAP TSA
     {
-      const { row, track } = makeRow('Existing TSA');
+      const { row, track } = makeRow('Existing SAP TSA');
       addAllMilestoneLines(track);
-      addBar(track, ld1, existingEnd, 'bar-existing-tsa', 'Existing TSA — 6 months',
-        `<strong>Existing TSA</strong>Start: ${fmtDate(ld1)}<br>End: ${fmtDate(existingEnd)}<br>Duration: 6 months`);
-      addMarker(track, existingEnd, '#5b8c5a',
-        `<strong>Existing TSA End</strong>${fmtDate(existingEnd)}`, '');
+      addBar(track, ld1, existingEnd, 'bar-existing-tsa', 'Existing SAP TSA — 6 months',
+        `<strong>Existing SAP TSA</strong>Start: ${fmtDate(ld1)}<br>End: ${fmtDate(existingEnd)}<br>Duration: 6 months`);
+      addMarker(track, existingEnd, '#4a90d9',
+        `<strong>Existing SAP TSA End</strong>${fmtDate(existingEnd)}`, '');
       wrapper.appendChild(row);
     }
 
@@ -904,7 +907,7 @@ function render() {
 
     updateInfoPanel(ld1, existingEnd, coreEnd, ext1End, ext2End);
   } else {
-    ['Legal Day 1', 'Existing TSA', 'Core TSA', 'Extension 1 - Core plus', 'Extension 2 - Extension 1 plus'].forEach(label => {
+    ['Legal Day 1', 'Existing SAP TSA', 'Core TSA', 'Extension 1 - Core plus', 'Extension 2 - Extension 1 plus'].forEach(label => {
       const { row } = makeRow(label);
       wrapper.appendChild(row);
     });
@@ -921,12 +924,20 @@ function render() {
 
   {
     const { row, track } = makeRow('Contract Signed By');
+    addMilestoneLine(track, FIXED_DATA.contractStart, 'milestone-line-contract',
+      `<strong>Contract Start</strong>${fmtDate(FIXED_DATA.contractStart)}`);
+    addMilestoneLine(track, FIXED_DATA.contractEnd, 'milestone-line-contract',
+      `<strong>Contract End</strong>${fmtDate(FIXED_DATA.contractEnd)}`);
     addMarker(track, FIXED_DATA.contractSigning, '#4a90d9',
       `<strong>Contract Signed By</strong>${fmtDate(FIXED_DATA.contractSigning)}`, fmtDate(FIXED_DATA.contractSigning));
     wrapper.appendChild(row);
   }
   {
     const { row, track } = makeRow('Contract Period');
+    addMilestoneLine(track, FIXED_DATA.contractStart, 'milestone-line-contract',
+      `<strong>Contract Start</strong>${fmtDate(FIXED_DATA.contractStart)}`);
+    addMilestoneLine(track, FIXED_DATA.contractEnd, 'milestone-line-contract',
+      `<strong>Contract End</strong>${fmtDate(FIXED_DATA.contractEnd)}`);
     addBar(track, FIXED_DATA.contractStart, FIXED_DATA.contractEnd,
       'bar-subscriptions', '',
       `<strong>Contract Period</strong>Start: ${fmtDate(FIXED_DATA.contractStart)}<br>End: ${fmtDate(FIXED_DATA.contractEnd)}`
@@ -1033,7 +1044,7 @@ function updateInfoPanel(ld1, existingEnd, coreEnd, ext1End, ext2End) {
 
   const cards = [
     { title: 'Legal Day 1',                    color: '#e53e3e', from: ld1,              to: null,               dur: '' },
-    { title: 'Existing TSA',                   color: '#5b8c5a', from: ld1,              to: lastDay(existingEnd), dur: '6 months from LD1' },
+    { title: 'Existing SAP TSA',                color: '#4a90d9', from: ld1,              to: lastDay(existingEnd), dur: '6 months from LD1' },
     { title: 'Core TSA',                       color: '#2d7a4f', from: ld1,              to: lastDay(coreEnd),     dur: '12 months from LD1' },
     { title: 'Extension 1 - Core plus',        color: '#c57c2e', from: lastDay(coreEnd), to: lastDay(ext1End),     dur: '+3 months after Core TSA' },
     { title: 'Extension 2 - Extension 1 plus', color: '#9b3a3a', from: lastDay(ext1End), to: lastDay(ext2End),     dur: '+3 months after Extension 1' },
