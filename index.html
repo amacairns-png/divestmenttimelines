@@ -1,0 +1,1113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Alcoa Divestment TSA Timelines</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Segoe UI', Arial, sans-serif;
+    background: #f4f6f9;
+    color: #2c3e50;
+    min-height: 100vh;
+    padding: 24px;
+  }
+
+  h1 {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #1a2b4a;
+    margin-bottom: 4px;
+  }
+
+  .subtitle {
+    font-size: 0.85rem;
+    color: #6b7a8d;
+    margin-bottom: 24px;
+  }
+
+  .controls {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px 24px;
+    margin-bottom: 24px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    display: flex;
+    align-items: center;
+    gap: 32px;
+    flex-wrap: wrap;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+  }
+
+  .control-group label {
+    font-size: 0.78rem;
+    font-weight: 600;
+    color: #5a6a7e;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+  }
+
+  .control-group input[type="date"] {
+    border: 1.5px solid #c8d4e0;
+    border-radius: 6px;
+    padding: 7px 12px;
+    font-size: 0.92rem;
+    color: #1a2b4a;
+    outline: none;
+    transition: border-color 0.2s;
+    background: #fafcfe;
+  }
+
+  .control-group input[type="date"]:focus {
+    border-color: #3d7ab5;
+  }
+
+  .legend {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 14px;
+    align-items: center;
+    margin-left: auto;
+  }
+
+  .legend-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.78rem;
+    color: #4a5568;
+  }
+
+  .legend-swatch {
+    width: 28px;
+    height: 14px;
+    border-radius: 3px;
+    flex-shrink: 0;
+  }
+
+  .legend-marker {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    flex-shrink: 0;
+  }
+
+  .chart-container {
+    background: #fff;
+    border-radius: 10px;
+    padding: 20px 24px 28px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    overflow-x: auto;
+  }
+
+  .section-label {
+    font-size: 0.72rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: #8898aa;
+    margin: 20px 0 10px;
+    border-top: 1px solid #edf2f7;
+    padding-top: 16px;
+  }
+
+  .section-label:first-child {
+    margin-top: 0;
+    border-top: none;
+    padding-top: 0;
+  }
+
+  .timeline-wrapper {
+    position: relative;
+    min-width: 900px;
+  }
+
+  /* Month axis */
+  .axis-header {
+    margin-left: 200px;
+    position: sticky;
+    top: 0;
+    background: #fff;
+    z-index: 10;
+  }
+
+  .year-axis {
+    display: flex;
+    border-bottom: 1px solid #edf2f7;
+    margin-bottom: 0;
+  }
+
+  .year-cell {
+    flex: none;
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #3d7ab5;
+    padding: 3px 4px;
+    border-left: 2px solid #a0bcd8;
+    background: #f0f5fb;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .month-axis {
+    display: flex;
+    padding-bottom: 4px;
+  }
+
+  .month-cell {
+    flex: 1;
+    text-align: center;
+    font-size: 0.65rem;
+    color: #8898aa;
+    font-weight: 600;
+    padding: 3px 0;
+    border-left: 1px solid #edf2f7;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .month-cell.year-start {
+    border-left: 2px solid #a0bcd8;
+  }
+
+  /* Row */
+  .tl-row {
+    display: flex;
+    align-items: center;
+    height: 36px;
+    margin: 3px 0;
+  }
+
+  .row-label {
+    width: 200px;
+    min-width: 200px;
+    font-size: 0.78rem;
+    color: #2c3e50;
+    padding-right: 12px;
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    font-weight: 500;
+  }
+
+  .row-track {
+    flex: 1;
+    position: relative;
+    height: 100%;
+    display: flex;
+    align-items: center;
+  }
+
+  /* Background grid lines */
+  .grid-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: #edf2f7;
+    pointer-events: none;
+  }
+
+  .grid-line.year-start {
+    background: #a0bcd8;
+    width: 2px;
+  }
+
+  /* Bars */
+  .bar {
+    position: absolute;
+    height: 20px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-radius: 4px;
+    display: flex;
+    align-items: center;
+    padding: 0 6px;
+    font-size: 0.68rem;
+    font-weight: 600;
+    color: #fff;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    z-index: 2;
+    cursor: default;
+    transition: filter 0.15s;
+  }
+
+  .bar:hover { filter: brightness(1.1); }
+
+  /* Marker diamond */
+  .marker {
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    top: 50%;
+    transform: translateY(-50%) rotate(45deg);
+    z-index: 5;
+    cursor: pointer;
+  }
+
+  .marker.draggable {
+    cursor: ew-resize;
+    width: 18px;
+    height: 18px;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 4px currentColor;
+  }
+
+  .marker.draggable:hover {
+    box-shadow: 0 0 0 2px #fff, 0 0 0 5px currentColor, 0 2px 8px rgba(0,0,0,0.25);
+  }
+
+  .marker.dragging {
+    cursor: ew-resize;
+    box-shadow: 0 0 0 2px #fff, 0 0 0 5px currentColor, 0 4px 16px rgba(0,0,0,0.3);
+    filter: brightness(1.2);
+  }
+
+  .bar.draggable-bar {
+    cursor: ew-resize;
+  }
+
+  .bar.draggable-bar:active {
+    filter: brightness(1.15);
+  }
+
+  body.dragging-active {
+    cursor: ew-resize !important;
+    user-select: none;
+  }
+
+  /* Drag snap tooltip */
+  .drag-tooltip {
+    position: fixed;
+    background: #e53e3e;
+    color: #fff;
+    padding: 4px 10px;
+    border-radius: 5px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    pointer-events: none;
+    z-index: 1100;
+    display: none;
+    white-space: nowrap;
+    transform: translateX(-50%);
+  }
+
+  .marker-label {
+    position: absolute;
+    font-size: 0.6rem;
+    font-weight: 700;
+    top: calc(50% + 10px);
+    transform: translateX(-50%);
+    white-space: nowrap;
+    z-index: 6;
+    color: #2c3e50;
+    pointer-events: none;
+  }
+
+  /* Today line */
+  .today-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: #e53e3e;
+    z-index: 8;
+    pointer-events: none;
+  }
+
+  /* Subscription milestone drop-lines (drawn in TSA rows) */
+  .milestone-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    z-index: 4;
+    pointer-events: none;
+  }
+
+  .milestone-line-contract {
+    background: repeating-linear-gradient(
+      to bottom, #4a90d9 0px, #4a90d9 5px, transparent 5px, transparent 9px
+    );
+  }
+
+  .milestone-line-renewal {
+    background: repeating-linear-gradient(
+      to bottom, #e07b39 0px, #e07b39 5px, transparent 5px, transparent 9px
+    );
+  }
+
+  .today-label-row {
+    position: relative;
+    height: 18px;
+    margin-left: 200px;
+  }
+
+  .today-label {
+    position: absolute;
+    font-size: 0.62rem;
+    font-weight: 700;
+    color: #e53e3e;
+    transform: translateX(-50%);
+    white-space: nowrap;
+    top: 2px;
+  }
+
+  /* Color palette */
+  .bar-subscriptions    { background: #4a90d9; }
+  .bar-possible-rise    { background: #e07b39; opacity: 0.75; }
+  .bar-existing-tsa     { background: #5b8c5a; }
+  .bar-core           { background: #2d7a4f; }
+  .bar-ext1           { background: #c57c2e; }
+  .bar-ext2           { background: #9b3a3a; }
+
+  .marker-contract    { background: #4a90d9; }
+  .marker-renewal     { background: #e07b39; }
+  .marker-ld1         { background: #e53e3e; }
+
+  /* Tooltip */
+  .tooltip {
+    position: fixed;
+    background: rgba(26,43,74,0.95);
+    color: #fff;
+    padding: 8px 12px;
+    border-radius: 6px;
+    font-size: 0.75rem;
+    pointer-events: none;
+    z-index: 1000;
+    max-width: 260px;
+    display: none;
+    line-height: 1.5;
+  }
+
+  .tooltip strong { display: block; margin-bottom: 3px; font-size: 0.8rem; }
+
+  /* Info panel */
+  .info-panel {
+    background: #fff;
+    border-radius: 10px;
+    padding: 18px 24px;
+    margin-top: 20px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.07);
+    display: none;
+  }
+
+  .info-panel.visible { display: block; }
+
+  .info-panel h3 {
+    font-size: 0.9rem;
+    font-weight: 700;
+    color: #1a2b4a;
+    margin-bottom: 12px;
+  }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+    gap: 10px;
+  }
+
+  .info-card {
+    background: #f7f9fc;
+    border-radius: 7px;
+    padding: 10px 14px;
+    border-left: 4px solid;
+  }
+
+  .info-card .card-title {
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #8898aa;
+    margin-bottom: 4px;
+  }
+
+  .info-card .card-dates {
+    font-size: 0.82rem;
+    color: #2c3e50;
+    font-weight: 600;
+  }
+
+  .info-card .card-duration {
+    font-size: 0.72rem;
+    color: #6b7a8d;
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Alcoa Divestment TSA Timelines</h1>
+<p class="subtitle">South32 / Alcoa Transition Service Agreement — Timeline Visualisation</p>
+
+<div class="controls">
+  <div class="control-group">
+    <label>Alcoa Legal Day 1</label>
+    <input type="date" id="ld1Input" />
+  </div>
+  <div class="legend">
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#4a90d9"></div> South32 Divestment Subscriptions
+    </div>
+    <div class="legend-item">
+      <div class="legend-marker" style="background:#e07b39; border-radius:0; transform:rotate(45deg); display:inline-block;"></div> South32 Renewal
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#e07b39; opacity:0.75;"></div> Possible Rise Renewal (2yr)
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#5b8c5a"></div> Existing TSA (6m)
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#2d7a4f"></div> Core (12m)
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#c57c2e"></div> Extension 1 - Core plus
+    </div>
+    <div class="legend-item">
+      <div class="legend-swatch" style="background:#9b3a3a"></div> Extension 2 - Ext 1 plus
+    </div>
+    <div class="legend-item">
+      <div style="width:2px; height:14px; background: repeating-linear-gradient(to bottom, #4a90d9 0px, #4a90d9 4px, transparent 4px, transparent 7px);"></div> Contract event
+    </div>
+    <div class="legend-item">
+      <div style="width:2px; height:14px; background: repeating-linear-gradient(to bottom, #e07b39 0px, #e07b39 4px, transparent 4px, transparent 7px);"></div> Renewal date
+    </div>
+    <div class="legend-item">
+      <div class="legend-marker" style="background:#e53e3e; border-radius:0; transform:rotate(45deg)"></div> Legal Day 1
+    </div>
+    <div class="legend-item">
+      <div style="width:14px; height:2px; background:#e53e3e;"></div> Today
+    </div>
+  </div>
+</div>
+
+<div class="chart-container">
+  <div class="timeline-wrapper" id="timelineWrapper">
+    <!-- Generated by JS -->
+  </div>
+</div>
+
+<div class="info-panel" id="infoPanel">
+  <h3>TSA Period Summary — Based on Legal Day 1</h3>
+  <div class="info-grid" id="infoGrid"></div>
+</div>
+
+<div class="tooltip" id="tooltip"></div>
+<div class="drag-tooltip" id="dragTooltip"></div>
+
+<script>
+// ─────────────────────────────────────────────
+//  DATA (from Alcoa Divestment TSA Timelines.xlsx)
+// ─────────────────────────────────────────────
+
+const FIXED_DATA = {
+  contractSigning:             new Date('2026-12-31'),
+  contractStart:               new Date('2027-03-31'),
+  contractEnd:                 new Date('2029-03-30'),
+  aribaRenewal:                new Date('2027-09-21'),
+  successFactorsRenewal:       new Date('2027-05-17'),
+  cpeaRenewal:                 new Date('2027-09-17'),
+  signavioRenewal:             new Date('2027-09-17'),
+  concurRenewal:               new Date('2027-09-30'),
+  possibleRiseRenewalDuration: 24, // 2 years in months
+};
+// Mutable draggable dates
+const MUTABLE = {
+  riseRenewal:         new Date('2027-09-17'),
+  possibleRiseStart:   new Date('2027-09-17'), // tracks with riseRenewal by default
+};
+
+// TSA duration definitions (months)
+const TSA_DEF = {
+  existingTSA: 6,
+  core:        12,
+  ext1:         3,
+  ext2:         3,
+};
+
+// ─────────────────────────────────────────────
+//  DATE HELPERS
+// ─────────────────────────────────────────────
+
+function addMonths(date, months) {
+  const d = new Date(date);
+  d.setMonth(d.getMonth() + months);
+  return d;
+}
+
+function fmtDate(d) {
+  if (!d) return '—';
+  return d.toLocaleDateString('en-AU', { day: '2-digit', month: 'short', year: 'numeric' });
+}
+
+function toInputValue(d) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+// ─────────────────────────────────────────────
+//  TIMELINE RANGE
+// ─────────────────────────────────────────────
+
+function getTimelineRange(ld1) {
+  let start = new Date('2026-10-01');
+  let end   = new Date('2030-06-01');
+
+  // Accommodate contract period
+  if (FIXED_DATA.contractSigning < start) start = new Date(FIXED_DATA.contractSigning.getFullYear(), FIXED_DATA.contractSigning.getMonth() - 1, 1);
+  if (FIXED_DATA.contractEnd     > end)   end   = new Date(FIXED_DATA.contractEnd.getFullYear(),     FIXED_DATA.contractEnd.getMonth() + 2,     1);
+
+  // Accommodate possible Rise Renewal end
+  const possibleRiseEnd = addMonths(MUTABLE.possibleRiseStart, FIXED_DATA.possibleRiseRenewalDuration);
+  if (possibleRiseEnd > end) end = new Date(possibleRiseEnd.getFullYear(), possibleRiseEnd.getMonth() + 2, 1);
+
+  if (ld1) {
+    const tsaEnd = addMonths(ld1, TSA_DEF.core + TSA_DEF.ext1 + TSA_DEF.ext2 + 2);
+    if (tsaEnd > end) end = tsaEnd;
+    const ld1Start = new Date(ld1.getFullYear(), ld1.getMonth() - 1, 1);
+    if (ld1Start < start) start = ld1Start;
+  }
+
+  start = new Date(start.getFullYear(), start.getMonth(), 1);
+  end   = new Date(end.getFullYear(),   end.getMonth() + 1, 1);
+  return { start, end };
+}
+
+function buildMonths(start, end) {
+  const months = [];
+  let cur = new Date(start);
+  while (cur < end) {
+    months.push(new Date(cur));
+    cur.setMonth(cur.getMonth() + 1);
+  }
+  return months;
+}
+
+// ─────────────────────────────────────────────
+//  POSITION HELPERS
+// ─────────────────────────────────────────────
+
+function dateToPercent(date, start, end) {
+  const total = end - start;
+  const offset = date - start;
+  return Math.max(0, Math.min(100, (offset / total) * 100));
+}
+
+function xToDate(clientX, trackEl, rangeStart, rangeEnd) {
+  const rect = trackEl.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+  const ms = rangeStart.getTime() + pct * (rangeEnd.getTime() - rangeStart.getTime());
+  const d = new Date(ms);
+  d.setHours(0, 0, 0, 0);
+  return d;
+}
+
+// ─────────────────────────────────────────────
+//  GENERIC DRAG ENGINE
+// ─────────────────────────────────────────────
+
+// dragState: { trackEl, rangeStart, rangeEnd, type, anchorX, anchorDate, tooltipFn }
+let dragState = null;
+
+// type = 'ld1' | 'rise' | 'possibleRise' | 'contract'
+function startDrag(e, el, trackEl, rangeStart, rangeEnd, type, tooltipFn) {
+  e.preventDefault();
+  e.stopPropagation();
+  hideTooltip();
+  const anchorDate = xToDate(e.clientX, trackEl, rangeStart, rangeEnd);
+  dragState = { trackEl, rangeStart, rangeEnd, type, anchorDate, tooltipFn };
+  el.classList.add('dragging');
+  document.body.classList.add('dragging-active');
+  showDragTooltip(e.clientX, e.clientY, tooltipFn(anchorDate));
+}
+
+document.addEventListener('mousemove', (e) => {
+  if (!dragState) return;
+  const newDate = xToDate(e.clientX, dragState.trackEl, dragState.rangeStart, dragState.rangeEnd);
+
+  if (dragState.type === 'ld1') {
+    const input = document.getElementById('ld1Input');
+    const val = toInputValue(newDate);
+    if (input.value !== val) { input.value = val; render(); }
+
+  } else if (dragState.type === 'rise') {
+    // Current Rise Renewal: move riseRenewal; possibleRiseStart tracks it
+    const newRise = xToDate(e.clientX, dragState.trackEl, dragState.rangeStart, dragState.rangeEnd);
+    if (newRise.getTime() !== MUTABLE.riseRenewal.getTime()) {
+      MUTABLE.riseRenewal       = newRise;
+      MUTABLE.possibleRiseStart = new Date(newRise); // keep linked
+      render();
+    }
+
+  } else if (dragState.type === 'possibleRise') {
+    // Possible Rise Renewal bar: move its own start independently
+    const newStart = xToDate(e.clientX, dragState.trackEl, dragState.rangeStart, dragState.rangeEnd);
+    if (newStart.getTime() !== MUTABLE.possibleRiseStart.getTime()) {
+      MUTABLE.possibleRiseStart = newStart;
+      render();
+    }
+  }
+
+  showDragTooltip(e.clientX, e.clientY, dragState.tooltipFn(newDate));
+});
+
+document.addEventListener('mouseup', () => {
+  if (!dragState) return;
+  document.body.classList.remove('dragging-active');
+  document.querySelectorAll('.marker.dragging').forEach(el => el.classList.remove('dragging'));
+  hideDragTooltip();
+  dragState = null;
+});
+
+// ─────────────────────────────────────────────
+//  DRAG TOOLTIP
+// ─────────────────────────────────────────────
+
+function showDragTooltip(clientX, clientY, text) {
+  const dt = document.getElementById('dragTooltip');
+  dt.textContent = text;
+  dt.style.display = 'block';
+  dt.style.left = clientX + 'px';
+  dt.style.top  = (clientY - 36) + 'px';
+}
+
+function hideDragTooltip() {
+  document.getElementById('dragTooltip').style.display = 'none';
+}
+
+// ─────────────────────────────────────────────
+//  RENDER
+// ─────────────────────────────────────────────
+
+function render() {
+  const ld1Input = document.getElementById('ld1Input').value;
+  const ld1 = ld1Input ? new Date(ld1Input) : null;
+
+  const { start, end } = getTimelineRange(ld1);
+  const months = buildMonths(start, end);
+  const today = new Date();
+  today.setHours(0,0,0,0);
+
+  const wrapper = document.getElementById('timelineWrapper');
+  wrapper.innerHTML = '';
+
+  // ── Year + Month axis ───────────────────────
+  const axisHeader = document.createElement('div');
+  axisHeader.className = 'axis-header';
+
+  // Build year groups: find consecutive months belonging to each year
+  const yearGroups = [];
+  months.forEach((m) => {
+    const yr = m.getFullYear();
+    if (!yearGroups.length || yearGroups[yearGroups.length - 1].year !== yr) {
+      yearGroups.push({ year: yr, count: 1 });
+    } else {
+      yearGroups[yearGroups.length - 1].count++;
+    }
+  });
+
+  const yearAxisDiv = document.createElement('div');
+  yearAxisDiv.className = 'year-axis';
+  yearGroups.forEach((g) => {
+    const cell = document.createElement('div');
+    cell.className = 'year-cell';
+    cell.style.flex = g.count + ' ' + g.count + ' 0';
+    cell.textContent = g.year;
+    yearAxisDiv.appendChild(cell);
+  });
+  axisHeader.appendChild(yearAxisDiv);
+
+  const axisDiv = document.createElement('div');
+  axisDiv.className = 'month-axis';
+  months.forEach((m) => {
+    const cell = document.createElement('div');
+    cell.className = 'month-cell' + (m.getMonth() === 0 ? ' year-start' : '');
+    cell.textContent = m.toLocaleDateString('en-AU', { month: 'short' });
+    axisDiv.appendChild(cell);
+  });
+  axisHeader.appendChild(axisDiv);
+  wrapper.appendChild(axisHeader);
+
+  // ── Today label row ──────────────────────────
+  const todayLabelRow = document.createElement('div');
+  todayLabelRow.className = 'today-label-row';
+  if (today >= start && today <= end) {
+    const pct = dateToPercent(today, start, end);
+    const lbl = document.createElement('div');
+    lbl.className = 'today-label';
+    lbl.style.left = pct + '%';
+    lbl.textContent = 'Today';
+    todayLabelRow.appendChild(lbl);
+  }
+  wrapper.appendChild(todayLabelRow);
+
+  // ── Row factory ──────────────────────────────
+  function makeRow(labelText) {
+    const row = document.createElement('div');
+    row.className = 'tl-row';
+    const lbl = document.createElement('div');
+    lbl.className = 'row-label';
+    lbl.textContent = labelText;
+    row.appendChild(lbl);
+    const track = document.createElement('div');
+    track.className = 'row-track';
+    months.forEach((m) => {
+      const pct = dateToPercent(m, start, end);
+      const gl = document.createElement('div');
+      gl.className = 'grid-line' + (m.getMonth() === 0 ? ' year-start' : '');
+      gl.style.left = pct + '%';
+      track.appendChild(gl);
+    });
+    if (today >= start && today <= end) {
+      const pct = dateToPercent(today, start, end);
+      const tl = document.createElement('div');
+      tl.className = 'today-line';
+      tl.style.left = pct + '%';
+      track.appendChild(tl);
+    }
+    row.appendChild(track);
+    return { row, track };
+  }
+
+  // ── Bar helper ───────────────────────────────
+  function addBar(track, dateFrom, dateTo, colorClass, label, tooltipHTML, dragType, dragTooltipFn) {
+    if (dateTo <= start || dateFrom >= end) return null;
+    const pctL = dateToPercent(dateFrom, start, end);
+    const pctR = dateToPercent(dateTo,   start, end);
+    const bar = document.createElement('div');
+    bar.className = 'bar ' + colorClass + (dragType ? ' draggable-bar' : '');
+    bar.style.left  = pctL + '%';
+    bar.style.width = Math.max(0.3, pctR - pctL) + '%';
+    bar.textContent = label;
+    if (dragType) {
+      bar.addEventListener('mousedown', (e) => {
+        // Only start a new drag if none is active (prevents re-render from re-triggering)
+        if (!dragState) startDrag(e, bar, track, start, end, dragType, dragTooltipFn);
+      });
+    } else if (tooltipHTML) {
+      bar.addEventListener('mouseenter', (e) => showTooltip(e, tooltipHTML));
+      bar.addEventListener('mousemove',  (e) => moveTooltip(e));
+      bar.addEventListener('mouseleave', hideTooltip);
+    }
+    track.appendChild(bar);
+    return bar;
+  }
+
+  // ── Marker helper ────────────────────────────
+  function addMarker(track, date, colorHex, tooltipHTML, labelText, dragType, dragTooltipFn) {
+    if (date < start || date > end) return null;
+    const pct = dateToPercent(date, start, end);
+    const m = document.createElement('div');
+    m.className = 'marker' + (dragType ? ' draggable' : '');
+    m.style.left       = `calc(${pct}% - 7px)`;
+    m.style.background = colorHex;
+    m.style.color      = colorHex; // used by currentColor in CSS box-shadow
+    if (dragType) {
+      m.addEventListener('mousedown', (e) => {
+        if (!dragState) startDrag(e, m, track, start, end, dragType, dragTooltipFn);
+      });
+      // Re-attach dragging class after re-render if this is the active drag
+      if (dragState && dragState.type === dragType) {
+        m.classList.add('dragging');
+        dragState.trackEl    = track;
+        dragState.rangeStart = start;
+        dragState.rangeEnd   = end;
+      }
+    } else if (tooltipHTML) {
+      m.addEventListener('mouseenter', (e) => showTooltip(e, tooltipHTML));
+      m.addEventListener('mousemove',  (e) => moveTooltip(e));
+      m.addEventListener('mouseleave', hideTooltip);
+    }
+    track.appendChild(m);
+    if (labelText) {
+      const lbl = document.createElement('div');
+      lbl.className = 'marker-label';
+      lbl.style.left = pct + '%';
+      lbl.textContent = labelText;
+      track.appendChild(lbl);
+    }
+    return m;
+  }
+
+  // ── Milestone drop-line helper ───────────────
+  function addMilestoneLine(track, date, styleClass, tooltipHTML) {
+    if (date < start || date > end) return;
+    const pct = dateToPercent(date, start, end);
+    const line = document.createElement('div');
+    line.className = `milestone-line ${styleClass}`;
+    line.style.left = `calc(${pct}% - 1px)`;
+    if (tooltipHTML) {
+      line.style.pointerEvents = 'auto';
+      line.style.cursor = 'default';
+      line.addEventListener('mouseenter', (e) => showTooltip(e, tooltipHTML));
+      line.addEventListener('mousemove',  (e) => moveTooltip(e));
+      line.addEventListener('mouseleave', hideTooltip);
+    }
+    track.appendChild(line);
+  }
+
+  // ══════════════════════════════════════════════
+  //  SECTION: South32 Divestment Subscriptions
+  // ══════════════════════════════════════════════
+  const secSub = document.createElement('div');
+  secSub.className = 'section-label';
+  secSub.textContent = 'South32 Divestment Subscriptions';
+  wrapper.appendChild(secSub);
+
+  {
+    const { row, track } = makeRow('Contract Period');
+    addBar(track, FIXED_DATA.contractSigning, FIXED_DATA.contractEnd,
+      'bar-subscriptions',
+      `Contract (${fmtDate(FIXED_DATA.contractSigning)} – ${fmtDate(FIXED_DATA.contractEnd)})`,
+      `<strong>Alcoa Contract Period</strong>Signing: ${fmtDate(FIXED_DATA.contractSigning)}<br>Start: ${fmtDate(FIXED_DATA.contractStart)}<br>End: ${fmtDate(FIXED_DATA.contractEnd)}`
+    );
+    addMarker(track, FIXED_DATA.contractSigning, '#4a90d9',
+      `<strong>Contract Signing</strong>${fmtDate(FIXED_DATA.contractSigning)}`, 'Signing');
+    addMarker(track, FIXED_DATA.contractStart, '#4a90d9',
+      `<strong>Contract Start</strong>${fmtDate(FIXED_DATA.contractStart)}`, 'Start');
+    addMarker(track, FIXED_DATA.contractEnd, '#4a90d9',
+      `<strong>Contract End</strong>${fmtDate(FIXED_DATA.contractEnd)}`, 'End');
+    wrapper.appendChild(row);
+  }
+
+  // ══════════════════════════════════════════════
+  //  SECTION: South32 Subscriptions
+  // ══════════════════════════════════════════════
+  const secS32Sub = document.createElement('div');
+  secS32Sub.className = 'section-label';
+  secS32Sub.textContent = 'South32 Subscriptions';
+  wrapper.appendChild(secS32Sub);
+
+  // Current Rise Renewal — draggable marker
+  {
+    const { row, track } = makeRow('Current Rise Renewal');
+    addMarker(track, MUTABLE.riseRenewal, '#e07b39',
+      null,
+      fmtDate(MUTABLE.riseRenewal),
+      'rise',
+      (d) => `Current Rise Renewal: ${fmtDate(d)}`
+    );
+    wrapper.appendChild(row);
+  }
+
+  // Possible Rise Renewal — draggable bar (independent start)
+  {
+    const possibleRiseEnd = addMonths(MUTABLE.possibleRiseStart, FIXED_DATA.possibleRiseRenewalDuration);
+    const { row, track } = makeRow('Possible Rise Renewal');
+    addBar(track, MUTABLE.possibleRiseStart, possibleRiseEnd,
+      'bar-possible-rise',
+      `Possible Rise Renewal — 2 years`,
+      null,
+      'possibleRise',
+      (d) => `Possible Rise: ${fmtDate(d)} – ${fmtDate(addMonths(d, FIXED_DATA.possibleRiseRenewalDuration))}`
+    );
+    // End marker (non-draggable, informational)
+    addMarker(track, possibleRiseEnd, '#e07b39',
+      `<strong>Possible Rise Renewal End</strong>${fmtDate(possibleRiseEnd)}`, '');
+    // Re-attach dragging state for bar after re-render
+    if (dragState && dragState.type === 'possibleRise') {
+      dragState.trackEl    = track;
+      dragState.rangeStart = start;
+      dragState.rangeEnd   = end;
+    }
+    wrapper.appendChild(row);
+  }
+
+  {
+    const { row, track } = makeRow('Ariba Renewal');
+    addMarker(track, FIXED_DATA.aribaRenewal, '#e07b39',
+      `<strong>Ariba Renewal</strong>${fmtDate(FIXED_DATA.aribaRenewal)}`, fmtDate(FIXED_DATA.aribaRenewal));
+    wrapper.appendChild(row);
+  }
+  {
+    const { row, track } = makeRow('SuccessFactors Renewal');
+    addMarker(track, FIXED_DATA.successFactorsRenewal, '#e07b39',
+      `<strong>SuccessFactors Renewal</strong>${fmtDate(FIXED_DATA.successFactorsRenewal)}`, fmtDate(FIXED_DATA.successFactorsRenewal));
+    wrapper.appendChild(row);
+  }
+  {
+    const { row, track } = makeRow('CPEA Renewal');
+    addMarker(track, FIXED_DATA.cpeaRenewal, '#e07b39',
+      `<strong>CPEA Renewal</strong>${fmtDate(FIXED_DATA.cpeaRenewal)}`, fmtDate(FIXED_DATA.cpeaRenewal));
+    wrapper.appendChild(row);
+  }
+  {
+    const { row, track } = makeRow('Signavio Renewal');
+    addMarker(track, FIXED_DATA.signavioRenewal, '#e07b39',
+      `<strong>Signavio Renewal</strong>${fmtDate(FIXED_DATA.signavioRenewal)}`, fmtDate(FIXED_DATA.signavioRenewal));
+    wrapper.appendChild(row);
+  }
+  {
+    const { row, track } = makeRow('Concur Renewal');
+    addMarker(track, FIXED_DATA.concurRenewal, '#e07b39',
+      `<strong>Concur Renewal</strong>${fmtDate(FIXED_DATA.concurRenewal)}`, fmtDate(FIXED_DATA.concurRenewal));
+    wrapper.appendChild(row);
+  }
+
+  // ══════════════════════════════════════════════
+  //  SECTION: South32 & Alcoa TSA
+  // ══════════════════════════════════════════════
+  const secTSA = document.createElement('div');
+  secTSA.className = 'section-label';
+  secTSA.textContent = 'South32 & Alcoa TSA — ' + (ld1 ? ('Legal Day 1: ' + fmtDate(ld1)) : 'Enter Legal Day 1 date above');
+  wrapper.appendChild(secTSA);
+
+  if (ld1) {
+    const existingEnd = addMonths(ld1, TSA_DEF.existingTSA);
+    const coreEnd     = addMonths(ld1, TSA_DEF.core);
+    const ext1End     = addMonths(coreEnd, TSA_DEF.ext1);
+    const ext2End     = addMonths(ext1End, TSA_DEF.ext2);
+
+    const contractMilestones = [
+      { date: FIXED_DATA.contractSigning, tip: `<strong>Contract Signing</strong>${fmtDate(FIXED_DATA.contractSigning)}` },
+      { date: FIXED_DATA.contractStart,   tip: `<strong>Contract Start</strong>${fmtDate(FIXED_DATA.contractStart)}` },
+      { date: FIXED_DATA.contractEnd,     tip: `<strong>Contract End</strong>${fmtDate(FIXED_DATA.contractEnd)}` },
+    ];
+    const renewalMilestones = [
+      { date: MUTABLE.riseRenewal,               tip: `<strong>Current Rise Renewal</strong>${fmtDate(MUTABLE.riseRenewal)}` },
+      { date: FIXED_DATA.aribaRenewal,           tip: `<strong>Ariba Renewal</strong>${fmtDate(FIXED_DATA.aribaRenewal)}` },
+      { date: FIXED_DATA.successFactorsRenewal,  tip: `<strong>SuccessFactors Renewal</strong>${fmtDate(FIXED_DATA.successFactorsRenewal)}` },
+      { date: FIXED_DATA.cpeaRenewal,            tip: `<strong>CPEA Renewal</strong>${fmtDate(FIXED_DATA.cpeaRenewal)}` },
+      { date: FIXED_DATA.signavioRenewal,        tip: `<strong>Signavio Renewal</strong>${fmtDate(FIXED_DATA.signavioRenewal)}` },
+      { date: FIXED_DATA.concurRenewal,          tip: `<strong>Concur Renewal</strong>${fmtDate(FIXED_DATA.concurRenewal)}` },
+    ];
+
+    function addAllMilestoneLines(track) {
+      contractMilestones.forEach(m => addMilestoneLine(track, m.date, 'milestone-line-contract', m.tip));
+      renewalMilestones.forEach(m  => addMilestoneLine(track, m.date, 'milestone-line-renewal',  m.tip));
+    }
+
+    // Legal Day 1 — draggable marker
+    {
+      const { row, track } = makeRow('Legal Day 1');
+      addAllMilestoneLines(track);
+      addMarker(track, ld1, '#e53e3e', null, fmtDate(ld1), 'ld1', (d) => `Legal Day 1: ${fmtDate(d)}`);
+      wrapper.appendChild(row);
+    }
+
+    // Existing TSA
+    {
+      const { row, track } = makeRow('Existing TSA');
+      addAllMilestoneLines(track);
+      addBar(track, ld1, existingEnd, 'bar-existing-tsa', 'Existing TSA — 6 months',
+        `<strong>Existing TSA</strong>Start: ${fmtDate(ld1)}<br>End: ${fmtDate(existingEnd)}<br>Duration: 6 months`);
+      addMarker(track, existingEnd, '#5b8c5a',
+        `<strong>Existing TSA End</strong>${fmtDate(existingEnd)}`, '');
+      wrapper.appendChild(row);
+    }
+
+    // Core TSA
+    {
+      const { row, track } = makeRow('Core TSA');
+      addAllMilestoneLines(track);
+      addBar(track, ld1, coreEnd, 'bar-core', 'Core TSA — 12 months',
+        `<strong>Core TSA</strong>Start: ${fmtDate(ld1)}<br>End: ${fmtDate(coreEnd)}<br>Duration: 12 months`);
+      addMarker(track, coreEnd, '#2d7a4f',
+        `<strong>Core TSA End</strong>${fmtDate(coreEnd)}`, '');
+      wrapper.appendChild(row);
+    }
+
+    // Extension 1
+    {
+      const { row, track } = makeRow('Extension 1 - Core plus');
+      addAllMilestoneLines(track);
+      addBar(track, ld1, coreEnd, 'bar-core', '', null);
+      addBar(track, coreEnd, ext1End, 'bar-ext1', 'Ext 1 +3m',
+        `<strong>Extension 1</strong>Start: ${fmtDate(coreEnd)}<br>End: ${fmtDate(ext1End)}<br>+3 months after Core`);
+      addMarker(track, ext1End, '#c57c2e',
+        `<strong>Extension 1 End</strong>${fmtDate(ext1End)}`, '');
+      wrapper.appendChild(row);
+    }
+
+    // Extension 2
+    {
+      const { row, track } = makeRow('Extension 2 - Extension 1 plus');
+      addAllMilestoneLines(track);
+      addBar(track, ld1, ext1End, 'bar-core', '', null);
+      addBar(track, ext1End, ext2End, 'bar-ext2', 'Ext 2 +3m',
+        `<strong>Extension 2</strong>Start: ${fmtDate(ext1End)}<br>End: ${fmtDate(ext2End)}<br>+3 months after Extension 1`);
+      addMarker(track, ext2End, '#9b3a3a',
+        `<strong>Extension 2 End</strong>${fmtDate(ext2End)}`, '');
+      wrapper.appendChild(row);
+    }
+
+    updateInfoPanel(ld1, existingEnd, coreEnd, ext1End, ext2End);
+  } else {
+    ['Legal Day 1', 'Existing TSA', 'Core TSA', 'Extension 1 - Core plus', 'Extension 2 - Extension 1 plus'].forEach(label => {
+      const { row } = makeRow(label);
+      wrapper.appendChild(row);
+    });
+    document.getElementById('infoPanel').classList.remove('visible');
+  }
+}
+
+function updateInfoPanel(ld1, existingEnd, coreEnd, ext1End, ext2End) {
+  const panel = document.getElementById('infoPanel');
+  const grid  = document.getElementById('infoGrid');
+  panel.classList.add('visible');
+
+  const cards = [
+    { title: 'Legal Day 1',                    color: '#e53e3e', from: ld1,     to: null,        dur: '' },
+    { title: 'Existing TSA',                   color: '#5b8c5a', from: ld1,     to: existingEnd, dur: '6 months from LD1' },
+    { title: 'Core TSA',                       color: '#2d7a4f', from: ld1,     to: coreEnd,     dur: '12 months from LD1' },
+    { title: 'Extension 1 - Core plus',        color: '#c57c2e', from: coreEnd, to: ext1End,     dur: '+3 months after Core TSA' },
+    { title: 'Extension 2 - Extension 1 plus', color: '#9b3a3a', from: ext1End, to: ext2End,     dur: '+3 months after Extension 1' },
+    { title: 'Max TSA Period',                 color: '#4a2e7a', from: ld1,     to: ext2End,     dur: `${TSA_DEF.core + TSA_DEF.ext1 + TSA_DEF.ext2} months from LD1` },
+  ];
+
+  grid.innerHTML = cards.map(c => `
+    <div class="info-card" style="border-left-color:${c.color}">
+      <div class="card-title">${c.title}</div>
+      <div class="card-dates">${fmtDate(c.from)}${c.to ? ' → ' + fmtDate(c.to) : ''}</div>
+      ${c.dur ? `<div class="card-duration">${c.dur}</div>` : ''}
+    </div>
+  `).join('');
+}
+
+// ─────────────────────────────────────────────
+//  TOOLTIP
+// ─────────────────────────────────────────────
+function showTooltip(e, html) {
+  if (dragState) return;
+  const tt = document.getElementById('tooltip');
+  tt.innerHTML = html;
+  tt.style.display = 'block';
+  moveTooltip(e);
+}
+function moveTooltip(e) {
+  const tt = document.getElementById('tooltip');
+  const x = e.clientX + 14;
+  const y = e.clientY - 10;
+  tt.style.left = Math.min(x, window.innerWidth - tt.offsetWidth - 16) + 'px';
+  tt.style.top  = Math.max(y, 8) + 'px';
+}
+function hideTooltip() {
+  document.getElementById('tooltip').style.display = 'none';
+}
+
+// ─────────────────────────────────────────────
+//  INIT
+// ─────────────────────────────────────────────
+document.getElementById('ld1Input').value = '2027-04-01';
+document.getElementById('ld1Input').addEventListener('change', render);
+render();
+</script>
+</body>
+</html>
