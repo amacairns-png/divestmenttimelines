@@ -837,11 +837,9 @@ function render() {
       { date: FIXED_DATA.contractEnd,     tip: `<strong>Contract End</strong>${fmtDate(FIXED_DATA.contractEnd)}` },
     ];
     const renewalMilestones = [
-      { date: MUTABLE.riseRenewal,               tip: `<strong>Current Rise Renewal</strong>${fmtDate(MUTABLE.riseRenewal)}` },
+      { date: MUTABLE.riseRenewal,               tip: `<strong>Rise / CPEA / Signavio Renewal</strong>${fmtDate(MUTABLE.riseRenewal)}` },
       { date: FIXED_DATA.aribaRenewal,           tip: `<strong>Ariba Renewal</strong>${fmtDate(FIXED_DATA.aribaRenewal)}` },
       { date: FIXED_DATA.successFactorsRenewal,  tip: `<strong>SuccessFactors Renewal</strong>${fmtDate(FIXED_DATA.successFactorsRenewal)}` },
-      { date: FIXED_DATA.cpeaRenewal,            tip: `<strong>CPEA Renewal</strong>${fmtDate(FIXED_DATA.cpeaRenewal)}` },
-      { date: FIXED_DATA.signavioRenewal,        tip: `<strong>Signavio Renewal</strong>${fmtDate(FIXED_DATA.signavioRenewal)}` },
       { date: FIXED_DATA.concurRenewal,          tip: `<strong>Concur Renewal</strong>${fmtDate(FIXED_DATA.concurRenewal)}` },
     ];
 
@@ -957,19 +955,19 @@ function render() {
   secS32Sub.textContent = 'South32 Subscriptions';
   wrapper.appendChild(secS32Sub);
 
-  // Current Rise Renewal — draggable marker
+  // Rise Renewal — draggable marker
   {
-    const { row, track } = makeRow('Current Rise Renewal');
+    const { row, track } = makeRow('Rise Renewal');
     addMarker(track, MUTABLE.riseRenewal, '#e07b39',
       null,
       fmtDate(MUTABLE.riseRenewal),
       'rise',
-      (d) => `Current Rise Renewal: ${fmtDate(d)}`
+      (d) => `Rise Renewal: ${fmtDate(d)}`
     );
     if (ld1) {
       const subBarEnd = addMonths(ld1, TSA_DEF.core + TSA_DEF.ext1 + TSA_DEF.ext2 + 1);
       addBar(track, MUTABLE.riseRenewal, subBarEnd, 'bar-subscriptions', '',
-        `<strong>Current Rise Renewal Period</strong>From: ${fmtDate(MUTABLE.riseRenewal)}<br>To: ${fmtDate(subBarEnd)}`);
+        `<strong>Rise Renewal Period</strong>From: ${fmtDate(MUTABLE.riseRenewal)}<br>To: ${fmtDate(subBarEnd)}`);
     }
     wrapper.appendChild(row);
   }
