@@ -829,7 +829,7 @@ function render() {
     const ext2End     = addMonths(ext1End, TSA_DEF.ext2);
 
     const contractMilestones = [
-      { date: FIXED_DATA.contractSigning, tip: `<strong>Contract Signing</strong>${fmtDate(FIXED_DATA.contractSigning)}` },
+      { date: FIXED_DATA.contractSigning, tip: `<strong>Contract Signed By</strong>${fmtDate(FIXED_DATA.contractSigning)}` },
       { date: FIXED_DATA.contractStart,   tip: `<strong>Contract Start</strong>${fmtDate(FIXED_DATA.contractStart)}` },
       { date: FIXED_DATA.contractEnd,     tip: `<strong>Contract End</strong>${fmtDate(FIXED_DATA.contractEnd)}` },
     ];
@@ -881,7 +881,7 @@ function render() {
     {
       const { row, track } = makeRow('Extension 1 - Core plus');
       addAllMilestoneLines(track);
-      addBar(track, ld1, coreEnd, 'bar-core', '', null);
+      addBar(track, ld1, coreEnd, 'bar-core', 'Core +12m', null);
       addBar(track, coreEnd, ext1End, 'bar-ext1', 'Ext 1 +3m',
         `<strong>Extension 1</strong>Start: ${fmtDate(coreEnd)}<br>End: ${fmtDate(ext1End)}<br>+3 months after Core`);
       addMarker(track, ext1End, '#c57c2e',
@@ -893,7 +893,8 @@ function render() {
     {
       const { row, track } = makeRow('Extension 2 - Extension 1 plus');
       addAllMilestoneLines(track);
-      addBar(track, ld1, ext1End, 'bar-core', '', null);
+      addBar(track, ld1, coreEnd, 'bar-core', 'Core +12m', null);
+      addBar(track, coreEnd, ext1End, 'bar-ext1', 'Ext 1 +3m', null);
       addBar(track, ext1End, ext2End, 'bar-ext2', 'Ext 2 +3m',
         `<strong>Extension 2</strong>Start: ${fmtDate(ext1End)}<br>End: ${fmtDate(ext2End)}<br>+3 months after Extension 1`);
       addMarker(track, ext2End, '#9b3a3a',
@@ -919,9 +920,9 @@ function render() {
   wrapper.appendChild(secSub);
 
   {
-    const { row, track } = makeRow('Contract Signing');
+    const { row, track } = makeRow('Contract Signed By');
     addMarker(track, FIXED_DATA.contractSigning, '#4a90d9',
-      `<strong>Contract Signing</strong>${fmtDate(FIXED_DATA.contractSigning)}`, fmtDate(FIXED_DATA.contractSigning));
+      `<strong>Contract Signed By</strong>${fmtDate(FIXED_DATA.contractSigning)}`, fmtDate(FIXED_DATA.contractSigning));
     wrapper.appendChild(row);
   }
   {
