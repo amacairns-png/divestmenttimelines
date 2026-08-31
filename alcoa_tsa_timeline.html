@@ -130,14 +130,36 @@
   }
 
   /* Month axis */
-  .month-axis {
-    display: flex;
+  .axis-header {
     margin-left: 200px;
-    margin-bottom: 0;
     position: sticky;
     top: 0;
     background: #fff;
     z-index: 10;
+  }
+
+  .year-axis {
+    display: flex;
+    border-bottom: 1px solid #edf2f7;
+    margin-bottom: 0;
+  }
+
+  .year-cell {
+    flex: none;
+    text-align: center;
+    font-size: 0.72rem;
+    font-weight: 700;
+    color: #3d7ab5;
+    padding: 3px 4px;
+    border-left: 2px solid #a0bcd8;
+    background: #f0f5fb;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  .month-axis {
+    display: flex;
     padding-bottom: 4px;
   }
 
@@ -156,7 +178,6 @@
   }
 
   .month-cell.year-start {
-    color: #3d7ab5;
     border-left: 2px solid #a0bcd8;
   }
 
@@ -687,18 +708,42 @@ function render() {
   const wrapper = document.getElementById('timelineWrapper');
   wrapper.innerHTML = '';
 
-  // ── Month axis ──────────────────────────────
+  // ── Year + Month axis ───────────────────────
+  const axisHeader = document.createElement('div');
+  axisHeader.className = 'axis-header';
+
+  // Build year groups: find consecutive months belonging to each year
+  const yearGroups = [];
+  months.forEach((m) => {
+    const yr = m.getFullYear();
+    if (!yearGroups.length || yearGroups[yearGroups.length - 1].year !== yr) {
+      yearGroups.push({ year: yr, count: 1 });
+    } else {
+      yearGroups[yearGroups.length - 1].count++;
+    }
+  });
+
+  const yearAxisDiv = document.createElement('div');
+  yearAxisDiv.className = 'year-axis';
+  yearGroups.forEach((g) => {
+    const cell = document.createElement('div');
+    cell.className = 'year-cell';
+    cell.style.flex = g.count + ' ' + g.count + ' 0';
+    cell.textContent = g.year;
+    yearAxisDiv.appendChild(cell);
+  });
+  axisHeader.appendChild(yearAxisDiv);
+
   const axisDiv = document.createElement('div');
   axisDiv.className = 'month-axis';
   months.forEach((m) => {
     const cell = document.createElement('div');
     cell.className = 'month-cell' + (m.getMonth() === 0 ? ' year-start' : '');
-    cell.textContent = m.getMonth() === 0
-      ? m.toLocaleDateString('en-AU', { month: 'short', year: 'numeric' })
-      : m.toLocaleDateString('en-AU', { month: 'short' });
+    cell.textContent = m.toLocaleDateString('en-AU', { month: 'short' });
     axisDiv.appendChild(cell);
   });
-  wrapper.appendChild(axisDiv);
+  axisHeader.appendChild(axisDiv);
+  wrapper.appendChild(axisHeader);
 
   // ── Today label row ──────────────────────────
   const todayLabelRow = document.createElement('div');
